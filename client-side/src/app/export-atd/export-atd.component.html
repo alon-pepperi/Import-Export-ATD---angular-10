@@ -1,0 +1,41 @@
+<div class="addon-container">
+  <div class="header-content">
+    <div class="content">
+      <div class="spacing-element title">
+        <pep-separator
+          key="sep1"
+          label="Export type definition"
+          xAlignment="'left'"
+        >
+        </pep-separator>
+      </div>
+    </div>
+  </div>
+  <div class="main-content">
+    <div class="content">
+      <div class="child1 child-container">
+        <pep-select
+          required="false"
+          xAlignment="'right'"
+          rowSpan="1"
+          key="select1"
+          label="Select activity to export"
+          value="selectedActivity"
+          title="selectedActivity"
+          [options]="activityTypes"
+          (valueChanged)="elementClicked($event)"
+        >
+        </pep-select>
+
+        <button
+          rowSpan="2"
+          mat-button
+          (click)="exportAtd()"
+          class="spacing-element pep-button md strong ellipsis"
+        >
+          Export
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

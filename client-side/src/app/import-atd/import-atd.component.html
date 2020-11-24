@@ -1,0 +1,126 @@
+<div class="addon-container">
+    <div class="header-content">
+        <div class="content">
+            <div class="spacing-element title">
+                <pep-separator
+                    key="sep1"
+                    [label]="'Import type definition'"
+                    xAlignment="'left'"
+                >
+                </pep-separator>
+            </div>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="content">
+            <div class="child1 child-container">
+                <div *ngIf="!showConflictResolution && !showWebhooksResolution">
+                    <pep-select
+                        [key]="'select1'"
+                        [label]="'Select activity to import'"
+                        [options]="activityTypes"
+                        (valueChanged)="elementClicked($event)"
+                    >
+                    </pep-select>
+                    <pep-attachment
+                        [key]="'attachment1'"
+                        [label]="'Upload type definition file'"
+                        (valueChanged)="onFileSelect($event)"
+                    >
+                    </pep-attachment>
+                    <button
+                        (click)="importAtd()"
+                        rowSpan="2"
+                        mat-button
+                        class="spacing-element pep-button md strong ellipsis"
+                    >
+                        Import
+                    </button>
+                </div>
+            </div>
+            <div
+                class="list-container"
+                #conflictslistContainer
+                [ngClass]="{ 'hide-list': !showConflictResolution }"
+            >
+                <p>
+                    <strong
+                        >Some conflicts were found. Please define the proper
+                        resolution.</strong
+                    >
+                </p>
+
+                <pep-list
+                    #conflictslist
+                    [firstFieldAsLink]="false"
+                    [isReport]="false"
+                    [supportSorting]="false"
+                    [supportResizing]="false"
+                    [selectionTypeForActions]="'none'"
+                    [noDataFoundMsg]="'No data'"
+                    [parentScroll]="conflictslistContainer"
+                    (notifyValueChanged)="notifyValueChanged($event)"
+                >
+                </pep-list>
+                <div class="buttons-container">
+                    <button
+                        rowSpan="2"
+                        mat-button
+                        class="spacing-element pep-button md strong ellipsis"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        (click)="onOkConflictsClicked()"
+                        rowSpan="2"
+                        mat-button
+                        class="spacing-element pep-button md strong ellipsis"
+                    >
+                        OK
+                    </button>
+                </div>
+            </div>
+
+            <div
+                class="list-container"
+                #webhookslistContainer
+                [ngClass]="{ 'hide-list': !showWebhooksResolution }"
+            >
+                <p>
+                    <strong
+                        >Please verify the following web services URLs.</strong
+                    >
+                </p>
+                <pep-list
+                    #webhookslist
+                    [firstFieldAsLink]="false"
+                    [isReport]="false"
+                    [supportSorting]="false"
+                    [supportResizing]="false"
+                    [selectionTypeForActions]="'none'"
+                    [noDataFoundMsg]="'No data'"
+                    [parentScroll]="webhookslistContainer"
+                    (notifyValueChanged)="notifyValueChanged($event)"
+                >
+                </pep-list>
+                <div class="buttons-container">
+                    <button
+                        rowSpan="2"
+                        mat-button
+                        class="spacing-element pep-button md strong ellipsis"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        (click)="onOkWebhooksClicked()"
+                        rowSpan="2"
+                        mat-button
+                        class="spacing-element pep-button md strong ellipsis"
+                    >
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

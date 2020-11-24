@@ -1,0 +1,47 @@
+{
+  "AddonUUID": "e9029d7f-af32-4b0e-a513-8d9ced6f8186",
+  "AddonVersion": "1.1.61",
+  "DebugPort": 4400,
+  "WebappBaseUrl": "https://app.sandbox.pepperi.com",
+  "DefaultEditor": "main",
+  "Endpoints": [
+    "installation.ts",
+    "api.ts"
+  ],
+  "Editors": [
+    "main"
+  ],
+  "Assets": [
+    "de.json",
+    "en.json",
+    "es.json",
+    "fr.json",
+    "he.json",
+    "hu.json",
+    "it.json",
+    "ja.json",
+    "nl.json",
+    "pl.json",
+    "pt.json",
+    "ru.json",
+    "zh.json"
+  ],
+  "PublishConfig": {
+    "Editors": [
+      {
+        "ParentPackageName": "ATD",
+        "PackageName": "export-atd",
+        "Description": "Export ATD"
+      },
+      {
+        "ParentPackageName": "ATD",
+        "PackageName": "import-atd",
+        "Description": "Import ATD"
+      }
+    ],
+    "Dependencies": {
+      "adal": "1.0.10",
+      "webapp": "16.55.42"
+    }
+  }
+}
