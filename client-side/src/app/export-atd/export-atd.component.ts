@@ -4,6 +4,7 @@ import {
     PepGroupButtonsViewType,
     PepGroupButton,
 } from "@pepperi-addons/ngx-lib/group-buttons";
+import { ObjectType } from "./../../../../models/ObjectType.enum";
 
 import {
     CustomizationService,
@@ -27,6 +28,8 @@ import {
 } from "@pepperi-addons/ngx-lib/list";
 
 import { ExportAtdService } from "./export-atd.service";
+import { disableDebugTools } from "@angular/platform-browser";
+import { AppService } from "../app.service";
 
 @Component({
     selector: "export-atd",
@@ -47,6 +50,7 @@ export class ExportAtdComponent implements OnInit {
     constructor(
         private translate: TranslateService,
         private customizationService: CustomizationService,
+        private appService: AppService,
         private utilitiesService: UtilitiesService,
         private dataConvertorService: DataConvertorService,
         private httpService: HttpService,
@@ -60,7 +64,7 @@ export class ExportAtdComponent implements OnInit {
 
     getActivityTypes() {
         this.activityTypes = [];
-        this.exportatdService.getTypes((types) => {
+        this.appService.getTypes((types) => {
             if (types) {
                 types.sort((a, b) => a.Value.localeCompare(b.Value));
                 this.activityTypes = [...types];
@@ -72,24 +76,26 @@ export class ExportAtdComponent implements OnInit {
         this.selectedActivity = event.value;
     }
 
-    async exportAtd() {
-        //this.addonService.setShowLoading(true);
+    exportAtd() {
+        debugger;
         let typeString = ``;
         this.exportatdService
             .getTypeOfSubType(this.selectedActivity)
             .subscribe((type) => {
-                if (type.Type === 2) {
-                    typeString = `transactions`;
+                if (type.Type === ObjectType.transactions) {
+                    typeString = ObjectType.toString(ObjectType.transactions);
                 } else {
-                    typeString = `activities`;
+                    typeString = ObjectType.toString(ObjectType.activities);
                 }
                 this.exportatdService
                     .callToExportATDAPI(typeString, this.selectedActivity)
                     .subscribe((res) => {
                         this.data = res.URL;
-                        this.exportatdService.openDialog(
-                            "Export ATD",
-                            "Export completed successfully",
+                        this.appService.openDialog(
+                            this.translate.instant("Export_ATD_Dialog_Title"),
+                            this.translate.instant(
+                                "Export_ATD_Dialog_Success_Message"
+                            ),
                             () => this.downloadUrl()
                         );
                     });
@@ -97,12 +103,9 @@ export class ExportAtdComponent implements OnInit {
     }
 
     downloadUrl() {
-        const data = fetch(this.data, {
-            method: `GET`,
-        })
+        const data = fetch(this.data, { method: `GET` })
             .then((response) => response.json())
             .then((data) => {
-                console.log(`data: ${JSON.stringify(data)}`);
                 var fileContents = JSON.stringify(data);
                 var filename = `${this.selectedActivity}.json`;
                 var filetype = "text/plain";

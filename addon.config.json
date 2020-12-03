@@ -1,6 +1,6 @@
 {
   "AddonUUID": "e9029d7f-af32-4b0e-a513-8d9ced6f8186",
-  "AddonVersion": "1.1.61",
+  "AddonVersion": "1.1.81",
   "DebugPort": 4400,
   "WebappBaseUrl": "https://app.sandbox.pepperi.com",
   "DefaultEditor": "main",
@@ -24,7 +24,20 @@
     "pl.json",
     "pt.json",
     "ru.json",
-    "zh.json"
+    "zh.json",
+    "de.ngx-lib.json",
+    "en.ngx-lib.json",
+    "es.ngx-lib.json",
+    "fr.ngx-lib.json",
+    "he.ngx-lib.json",
+    "hu.ngx-lib.json",
+    "it.ngx-lib.json",
+    "ja.ngx-lib.json",
+    "nl.ngx-lib.json",
+    "pl.ngx-lib.json",
+    "pt.ngx-lib.json",
+    "ru.ngx-lib.json",
+    "zh.ngx-lib.json"
   ],
   "PublishConfig": {
     "Editors": [
@@ -41,7 +54,9 @@
     ],
     "Dependencies": {
       "adal": "1.0.10",
-      "webapp": "16.55.42"
-    }
+      "webapp": "16.55.42",
+      "papi": "9.5.349"
+    },
+    "ClientStack": "ng10"
   }
 }

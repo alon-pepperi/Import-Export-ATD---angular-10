@@ -1,10 +1,12 @@
-import { Component, OnInit, ViewChild } from "@angular/core";
+import { Component, OnInit, Type, ViewChild } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
 // @ts-ignore
 import { UserService } from "pepperi-user-service";
 import { ImportAtdService } from "./import-atd.service";
 import { Reference } from "./../../../../models/reference";
 import { Conflict } from "./../../../../models/conflict";
+import { ObjectType } from "./../../../../models/ObjectType.enum";
+
 import { Guid } from "./../../../../models/guid";
 import { References, Mapping } from "./../../../../models/referencesMap";
 import { __param } from "tslib";
@@ -35,6 +37,7 @@ import {
     PepGroupButtonsViewType,
 } from "@pepperi-addons/ngx-lib/group-buttons";
 import { PepColorType } from "@pepperi-addons/ngx-lib/color";
+import { AppService } from "../app.service";
 
 @Component({
     selector: "app-import-atd",
@@ -52,7 +55,6 @@ export class ImportAtdComponent implements OnInit {
     selectedFile: File;
     showConflictResolution: boolean = false;
     showWebhooksResolution: boolean = false;
-    title = "pepperi web app test";
     value = "";
 
     groupButtons: Array<PepGroupButton>;
@@ -71,6 +73,7 @@ export class ImportAtdComponent implements OnInit {
     constructor(
         private dataConvertorService: DataConvertorService,
         private utilitiesService: UtilitiesService,
+        private appService: AppService,
         private translate: TranslateService,
         private customizationService: CustomizationService,
         private httpService: HttpService,
@@ -83,7 +86,7 @@ export class ImportAtdComponent implements OnInit {
 
     getActivityTypes() {
         this.activityTypes = [];
-        this.importedService.getTypes((types) => {
+        this.appService.getTypes((types) => {
             if (types) {
                 types.sort((a, b) => a.Value.localeCompare(b.Value));
                 this.activityTypes = [...types];
@@ -94,7 +97,15 @@ export class ImportAtdComponent implements OnInit {
     ngOnInit() {}
 
     async onOkConflictsClicked() {
-        let resulotion = {};
+        if (this.webhooks.length > 0) {
+            this.showWebhooks();
+        } else {
+            this.callToImportATD();
+        }
+    }
+
+    private async hanleConflictsResolution() {
+        let Resolution = {};
         this.conflictsList.forEach(async (conflict) => {
             let referenceIndex = this.referenceMap.Mapping.findIndex(
                 (pair) => pair.Origin.Name === conflict.Name
@@ -103,56 +114,7 @@ export class ImportAtdComponent implements OnInit {
                 conflict.Resolution ===
                 ResolutionOption.toString(ResolutionOption.CreateNew)
             ) {
-                if (
-                    conflict.Object ===
-                    ReferenceType.toString(ReferenceType.FileStorage)
-                ) {
-                    let res = await this.upsertFileStorage(referenceIndex);
-                    let destinitionRef = {} as Reference;
-                    destinitionRef.ID = res.InternalID.toString();
-                    destinitionRef.Name = res.FileName;
-                    destinitionRef.Type = ReferenceType.toString(
-                        ReferenceType.FileStorage
-                    );
-                    this.referenceMap.Mapping[
-                        referenceIndex
-                    ].Destination = destinitionRef;
-                } else if (
-                    conflict.Object ===
-                    ReferenceType.toString(ReferenceType.Filter)
-                ) {
-                    let transactionItemScope = await this.getTransactionItemScope(
-                        this.selectedActivity
-                    );
-                    let res = await this.upsertTransactionItemScope(
-                        referenceIndex,
-                        transactionItemScope
-                    );
-                    let destinitionRef = {} as Reference;
-                    destinitionRef.ID = res.InternalID.toString();
-                    destinitionRef.Name = res.FileName;
-                    destinitionRef.Type = ReferenceType.toString(
-                        ReferenceType.Filter
-                    );
-                    this.referenceMap.Mapping[
-                        referenceIndex
-                    ].Destination = destinitionRef;
-                } else if (
-                    conflict.Object ===
-                    ReferenceType.toString(ReferenceType.UserDefinedTable)
-                ) {
-                    let res = await this.upsertUDT(referenceIndex);
-                    let destinitionRef = {} as Reference;
-                    destinitionRef.ID = res.InternalID.toString();
-                    destinitionRef.Name = res.TableID;
-                    destinitionRef.Type = ReferenceType.toString(
-                        ReferenceType.UserDefinedTable
-                    );
-
-                    this.referenceMap.Mapping[
-                        referenceIndex
-                    ].Destination = destinitionRef;
-                }
+                await this.postNewObjectByType(conflict, referenceIndex);
             } else if (
                 conflict.Resolution ===
                 ResolutionOption.toString(ResolutionOption.OverwriteExisting)
@@ -162,7 +124,7 @@ export class ImportAtdComponent implements OnInit {
                     ReferenceType.toString(ReferenceType.FileStorage)
                 ) {
                     let key = `${this.referenceMap.Mapping[referenceIndex].Destination.ID}`;
-                    resulotion[key] = ResolutionOption.OverwriteExisting;
+                    Resolution[key] = ResolutionOption.OverwriteExisting;
                     let file: FileStorage = {
                         InternalID: Number(
                             this.referenceMap.Mapping[referenceIndex]
@@ -189,7 +151,7 @@ export class ImportAtdComponent implements OnInit {
                 ResolutionOption.toString(ResolutionOption.UseExisting)
             ) {
                 let key = `${this.referenceMap.Mapping[referenceIndex].Destination.ID}`;
-                resulotion[key] = ResolutionOption.UseExisting;
+                Resolution[key] = ResolutionOption.UseExisting;
             }
         });
 
@@ -199,16 +161,59 @@ export class ImportAtdComponent implements OnInit {
             { table: `importExportATD` },
             {
                 Key: "resolution",
-                Value: resulotion,
+                Value: Resolution,
             }
         );
+    }
 
-        if (this.webhooks.length > 0) {
-            this.showWebhooks();
-        } else {
-            this.callToImportATD();
+    private async postNewObjectByType(
+        conflict: Conflict,
+        referenceIndex: number
+    ) {
+        if (
+            conflict.Object ===
+            ReferenceType.toString(ReferenceType.FileStorage)
+        ) {
+            let res = await this.upsertFileStorage(referenceIndex);
+            let destinitionRef = {} as Reference;
+            destinitionRef.ID = res.InternalID.toString();
+            destinitionRef.Name = res.FileName;
+            destinitionRef.Type = ReferenceType.toString(
+                ReferenceType.FileStorage
+            );
+            this.referenceMap.Mapping[
+                referenceIndex
+            ].Destination = destinitionRef;
+        } else if (
+            conflict.Object === ReferenceType.toString(ReferenceType.Filter)
+        ) {
+            // let transactionItemScope = await this.getTransactionItemScope(
+            //     this.selectedActivity
+            // );
+            let res = await this.upsertTransactionItemScope(referenceIndex);
+            let destinitionRef = {} as Reference;
+            destinitionRef.ID = res.InternalID.toString();
+            destinitionRef.Name = res.FileName;
+            destinitionRef.Type = ReferenceType.toString(ReferenceType.Filter);
+            this.referenceMap.Mapping[
+                referenceIndex
+            ].Destination = destinitionRef;
+        } else if (
+            conflict.Object ===
+            ReferenceType.toString(ReferenceType.UserDefinedTable)
+        ) {
+            let res = await this.upsertUDT(referenceIndex);
+            let destinitionRef = {} as Reference;
+            destinitionRef.ID = res.InternalID.toString();
+            destinitionRef.Name = res.TableID;
+            destinitionRef.Type = ReferenceType.toString(
+                ReferenceType.UserDefinedTable
+            );
+
+            this.referenceMap.Mapping[
+                referenceIndex
+            ].Destination = destinitionRef;
         }
-        console.log(this.referenceMap);
     }
 
     private showWebhooks() {
@@ -236,12 +241,11 @@ export class ImportAtdComponent implements OnInit {
         return res;
     }
 
-    private async upsertTransactionItemScope(
-        referenceIndex: number,
-        existTransactionItemScope: any
-    ) {
+    private async upsertTransactionItemScope(referenceIndex: number) {
+        let id = this.importedService.exportedAtd.Settings
+            .TransactionItemsScopeFilterID;
         let filter = {
-            name: `Transaction Item Scope`,
+            Name: ``,
             Data: JSON.parse(
                 this.referenceMap.Mapping[referenceIndex].Origin.Content
             ),
@@ -256,18 +260,13 @@ export class ImportAtdComponent implements OnInit {
                 },
             },
         };
-        if (existTransactionItemScope) {
-            filter[`internalID`] = existTransactionItemScope[0].InternalID;
+        if (id) {
+            filter[`InternalID`] = id;
         }
         let res = await this.importedService.callToPapi(
             "POST",
             "/meta_data/filters",
             filter
-        );
-        console.log(
-            `afetr posting filter. body: ${JSON.stringify(
-                this.referenceMap.Mapping[referenceIndex].Origin.Content
-            )}, res: ${JSON.stringify(res)}`
         );
         return res;
     }
@@ -343,6 +342,8 @@ export class ImportAtdComponent implements OnInit {
     }
 
     private async callToImportATD() {
+        await this.hanleConflictsResolution();
+
         const presignedUrl = await this.importedService.callToPapi(
             "POST",
             `/file_storage/tmp`
@@ -355,11 +356,7 @@ export class ImportAtdComponent implements OnInit {
         let url = presignedUrl.DownloadURL;
 
         this.deleteContentFromMap();
-        console.log(
-            `calling to api\import_atd. body: url: ${url}, ReferencesMap: ${JSON.stringify(
-                this.referenceMap
-            )}`
-        );
+
         const importAtdResult = this.importedService
             .callToServerAPI(
                 "import_type_definition",
@@ -370,16 +367,24 @@ export class ImportAtdComponent implements OnInit {
             .then(
                 (res: any) => {
                     if (res == "success") {
-                        const title = `success`;
-                        const content = `Import was finished succefully`;
+                        const title = this.translate.instant(
+                            "Import_Export_Success"
+                        );
+                        const content = this.translate.instant(
+                            "Import_Finished_Succefully"
+                        );
                         debugger;
-                        this.importedService.openDialog(title, content, () => {
+                        this.appService.openDialog(title, content, () => {
                             window.location.reload();
                         });
                     } else {
-                        const title = `Error`;
-                        const content = `An error occurred while importing`;
-                        this.importedService.openDialog(title, content);
+                        const title = this.translate.instant(
+                            "Import_Export_Error"
+                        );
+                        const content = this.translate.instant(
+                            "Error_While_Importing"
+                        );
+                        this.appService.openDialog(title, content);
                     }
                     //window.clearInterval();
                     this.data = res;
@@ -446,6 +451,35 @@ export class ImportAtdComponent implements OnInit {
             await this.importedService
                 .getTypeOfSubType(this.selectedActivity)
                 .subscribe((typeDefinition) => {
+                    let exportedAtdType;
+                    if (this.importedService.exportedAtd.LineFields) {
+                        exportedAtdType = ObjectType.transactions;
+                    } else {
+                        exportedAtdType = ObjectType.activities;
+                    }
+                    if (typeDefinition.Type != exportedAtdType) {
+                        if (
+                            typeDefinition.Type === ObjectType.activities &&
+                            exportedAtdType === ObjectType.transactions
+                        )
+                            this.appService.openDialog(
+                                this.translate.instant("Import_Export_Error"),
+                                this.translate.instant(
+                                    "Transaction_Cannot_Imported_To_Activity"
+                                )
+                            );
+                        else if (
+                            typeDefinition.Type === ObjectType.transactions &&
+                            exportedAtdType === ObjectType.activities
+                        )
+                            this.appService.openDialog(
+                                this.translate.instant("Import_Export_Error"),
+                                this.translate.instant(
+                                    "Activity_Cannot_Imported_To_Transaction"
+                                )
+                            );
+                        return;
+                    }
                     this.getTypeString(typeDefinition);
                     this.typeUUID = typeDefinition.UUID;
                     this.importedService
@@ -464,20 +498,23 @@ export class ImportAtdComponent implements OnInit {
                                 this.referenceMap &&
                                 this.referenceMap.Mapping.length > 0
                             ) {
-                                this.getConflictsResulotion(
+                                this.getConflictsResolution(
                                     this.referenceMap
                                 ).then(async (res) => {
                                     if (!res) {
                                         return;
                                     }
                                     this.conflictsList = res;
+                                    // according to Eyal's request to not showing transactionItemScope
 
-                                    if (
-                                        this.conflictsList &&
-                                        this.conflictsList.length > 0
-                                    ) {
-                                        await this.fillResolutionFromDynamo();
-
+                                    let conflictNum = this.conflictsList.filter(
+                                        (x) =>
+                                            x.Object !=
+                                            ReferenceType.toString(
+                                                ReferenceType.Filter
+                                            )
+                                    ).length;
+                                    if (this.conflictsList && conflictNum > 0) {
                                         this.showWebhooksResolution = false;
                                         this.showConflictResolution = true;
 
@@ -533,14 +570,14 @@ export class ImportAtdComponent implements OnInit {
     }
 
     private getTypeString(type: any) {
-        if (type.Type === 2) {
-            this.typeString = `transactions`;
+        if (type.Type === ObjectType.transactions) {
+            this.typeString = ObjectType.toString(ObjectType.transactions);
         } else {
-            this.typeString = `activities`;
+            this.typeString = ObjectType.toString(ObjectType.activities);
         }
     }
 
-    async getConflictsResulotion(referenceMap: References) {
+    async getConflictsResolution(referenceMap: References) {
         let conflicts: Conflict[] = [];
 
         const refMaps = this.importedService.exportedAtd.References;
@@ -561,13 +598,18 @@ export class ImportAtdComponent implements OnInit {
                     ReferenceType.toString(ReferenceType.TypeDefinition)
                 ) {
                     content +=
-                        `${c.Name} activity/transaction not found` + "<br/>";
+                        `${c.Name} ${this.translate.instant(
+                            "Activity_Transaction_Not_Found"
+                        )}` + "<br/>";
                 } else {
-                    content += `${c.Name} ${c.Type} not found` + "<br/>";
+                    content +=
+                        `${c.Name} ${c.Type} ${this.translate.instant(
+                            "Not_Found"
+                        )}` + "<br/>";
                 }
             });
-            const title = `Error`;
-            this.importedService.openDialog(title, content);
+            const title = this.translate.instant("Import_Export_Error");
+            this.appService.openDialog(title, content);
             return null;
         }
         return conflicts;
@@ -581,66 +623,74 @@ export class ImportAtdComponent implements OnInit {
     ) {
         if (ref.Type !== ReferenceType.toString(ReferenceType.Webhook)) {
             let referencedPair: Mapping = referenceMap.Mapping.find(
-                (pair) =>
-                    pair.Origin.ID === ref.ID || pair.Origin.Name === ref.Name
+                (pair) => pair.Origin.Name === ref.Name
             );
-
-            if (!referencedPair.Destination) {
-                // For objects with a path (such as custom form),
-                // if a matching object does not exist, then continue (create this object in the Execution step).
-                if (
-                    ref.Type ===
-                        ReferenceType.toString(ReferenceType.FileStorage) ||
-                    ref.Type ===
-                        ReferenceType.toString(
-                            ReferenceType.UserDefinedTable
-                        ) ||
-                    ref.Type === ReferenceType.toString(ReferenceType.Filter)
-                ) {
-                    const conflict: Conflict = {
-                        Name: ref.Name,
-                        Object: referencedPair.Origin.Type,
-                        Status: `Object not found`,
-                        Resolution: ResolutionOption.toString(
-                            ResolutionOption.CreateNew
-                        ),
-                        UUID: Guid.newGuid(),
-                        ID: ref.ID,
-                        // this.resolutionOptions,
-                    };
-                    conflicts.push(conflict);
-                } else {
-                    unresolvedConflicts.push(ref);
-                    //throw new Error(content);
-                }
-            } else if (
-                referencedPair.Origin.ID === referencedPair.Destination.ID
-            ) {
-                return;
-            } else if (
-                referencedPair.Origin.Name === referencedPair.Destination.Name
-            ) {
-                if (
-                    ref.Type ===
-                    ReferenceType.toString(ReferenceType.FileStorage)
-                ) {
-                    const filesAreSame = await this.compareFileContentOfOriginAndDest(
-                        referencedPair.Origin,
-                        referencedPair.Destination
-                    );
-                    if (!filesAreSame) {
+            if (referencedPair) {
+                if (!referencedPair.Destination) {
+                    // For objects with a path (such as custom form),
+                    // if a matching object does not exist, then continue (create this object in the Execution step).
+                    if (
+                        ref.Type ===
+                            ReferenceType.toString(ReferenceType.FileStorage) ||
+                        ref.Type ===
+                            ReferenceType.toString(
+                                ReferenceType.UserDefinedTable
+                            ) ||
+                        ref.Type ===
+                            ReferenceType.toString(ReferenceType.Filter)
+                    ) {
                         const conflict: Conflict = {
-                            Name: referencedPair.Destination.Name,
-                            Object: ReferenceType.toString(
-                                referencedPair.Destination.Type
+                            Name: ref.Name,
+                            Object: referencedPair.Origin.Type,
+                            Status: this.translate.instant("Object_Not_Found"),
+                            Resolution: ResolutionOption.toString(
+                                ResolutionOption.CreateNew
                             ),
-                            Status: `A file named ${referencedPair.Destination.Name} exists with a different content`,
-                            Resolution: null,
                             UUID: Guid.newGuid(),
-                            ID: referencedPair.Destination.ID,
+                            ID: ref.ID,
                             // this.resolutionOptions,
                         };
                         conflicts.push(conflict);
+                    } else {
+                        unresolvedConflicts.push(ref);
+                        //throw new Error(content);
+                    }
+                } else if (
+                    referencedPair.Origin.ID === referencedPair.Destination.ID
+                ) {
+                    return;
+                } else if (
+                    referencedPair.Origin.Name ===
+                    referencedPair.Destination.Name
+                ) {
+                    if (
+                        ref.Type ===
+                        ReferenceType.toString(ReferenceType.FileStorage)
+                    ) {
+                        const filesAreSame = await this.compareFileContentOfOriginAndDest(
+                            referencedPair.Origin,
+                            referencedPair.Destination
+                        );
+                        if (!filesAreSame) {
+                            const conflict: Conflict = {
+                                Name: referencedPair.Destination.Name,
+                                Object: ReferenceType.toString(
+                                    referencedPair.Destination.Type
+                                ),
+                                Status: `${this.translate.instant(
+                                    "File_Named"
+                                )} ${
+                                    referencedPair.Destination.Name
+                                } ${this.translate.instant(
+                                    "Exists_With_Different_Content"
+                                )}`,
+                                Resolution: null,
+                                UUID: Guid.newGuid(),
+                                ID: referencedPair.Destination.ID,
+                                // this.resolutionOptions,
+                            };
+                            conflicts.push(conflict);
+                        }
                     }
                 }
             }
@@ -659,19 +709,11 @@ export class ImportAtdComponent implements OnInit {
         origin: Reference,
         destinition: Reference
     ): Promise<boolean> {
-        console.log("in compareFileContentOfOriginAndDest");
         let contentOrigin = await this.fileToBase64(origin.Name, origin.Path);
         let contentDestinition = await this.fileToBase64(
             destinition.Name,
             destinition.Path
         );
-
-        console.log(
-            `contentOrigin === contentDestinition: ${
-                contentOrigin === contentDestinition
-            }`
-        );
-
         return contentOrigin === contentDestinition;
     }
 
@@ -702,19 +744,18 @@ export class ImportAtdComponent implements OnInit {
     uploadFile(event) {
         let files = event.target.files;
         if (files.length > 0) {
-            console.log(files[0]); // You will see the file
             this.importedService.uploadFile(files[0]);
         }
     }
 
     //#region conflicts list
     ngAfterViewInit() {
-        if (this.conflictsList.length > 0) {
-            this.loadConflictlist();
-        }
-        if (this.webhooks.length > 0) {
-            this.loadWebhookslist();
-        }
+        // if (this.conflictsList.length > 0) {
+        //     this.loadConflictlist();
+        // }
+        // if (this.webhooks.length > 0) {
+        //     this.loadWebhookslist();
+        // }
     }
 
     elementClicked(event) {
@@ -722,6 +763,7 @@ export class ImportAtdComponent implements OnInit {
     }
 
     notifyValueChanged(event) {
+        debugger;
         if (this.showConflictResolution) {
             let objectOndex = this.conflictsList.findIndex(
                 (x) => x.UUID === event.Id
@@ -731,7 +773,7 @@ export class ImportAtdComponent implements OnInit {
             let objectOndex = this.webhooks.findIndex(
                 (x) => x.UUID === event.Id
             );
-            if (event.ApiName === "Secret Key") {
+            if (event.ApiName === "Secret key") {
                 this.webhooks[objectOndex].SecretKey = event.Value;
             } else if (event.ApiName === "Web service URL") {
                 this.webhooks[objectOndex].Url = event.Value;
@@ -746,16 +788,27 @@ export class ImportAtdComponent implements OnInit {
     loadConflictList(conflicts) {
         if (this.customConflictList && conflicts) {
             const tableData = new Array<PepRowData>();
-            conflicts.forEach((conflict: any) => {
-                //Eyal's request - do not display the transaction item scope
-                if (conflict.Object !== "Webhook") {
-                    const userKeys = ["Object", "Name", "Status"];
-                    const supportUserKeys = ["Resolution"];
-                    const allKeys = [...userKeys, ...supportUserKeys];
-                    tableData.push(
-                        this.convertConflictToPepRowData(conflict, allKeys)
-                    );
+            conflicts.forEach((conflict: Conflict) => {
+                if (
+                    conflict.Object ==
+                    ReferenceType.toString(ReferenceType.Filter)
+                ) {
+                    return;
                 }
+                const userKeys = [
+                    this.translate.instant("Object_ConflictResolutionColumn"),
+                    this.translate.instant("Name_ConflictResolutionColumn"),
+                    this.translate.instant("Status_ConflictResolutionColumn"),
+                ];
+                const supportUserKeys = [
+                    this.translate.instant(
+                        "Resolution_ConflictResolutionColumn"
+                    ),
+                ];
+                const allKeys = [...userKeys, ...supportUserKeys];
+                tableData.push(
+                    this.convertConflictToPepRowData(conflict, allKeys)
+                );
             });
 
             const pepperiListObj = this.dataConvertorService.convertListData(
@@ -842,13 +895,17 @@ export class ImportAtdComponent implements OnInit {
                         Key: ResolutionOption.toString(
                             ResolutionOption.UseExisting
                         ),
-                        Value: "Use existing", //this.translate["Conflict_Resolution_Type_UseExist"],
+                        Value: this.translate[
+                            "Conflict_Resolution_Type_UseExist"
+                        ],
                     },
                     {
                         Key: ResolutionOption.toString(
                             ResolutionOption.OverwriteExisting
                         ),
-                        Value: "Owerwrite existing", //this.translate["Conflict_Resolution_Type_Owerwrite"],
+                        Value: this.translate[
+                            "Conflict_Resolution_Type_Owerwrite"
+                        ],
                     },
                 ];
                 break;
@@ -874,7 +931,10 @@ export class ImportAtdComponent implements OnInit {
         if (this.customWebhookList && webhooks) {
             const tableData = new Array<PepRowData>();
             webhooks.forEach((webhook: any) => {
-                const allKeys = ["Web service URL", "Secret key"];
+                const allKeys = [
+                    this.translate.instant("Object_WebhookUrlColumn"),
+                    this.translate.instant("Object_WebhookSecretKeyColumn"),
+                ];
                 tableData.push(
                     this.convertWebhookToPepRowData(webhook, allKeys)
                 );

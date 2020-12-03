@@ -1,13 +1,15 @@
 <!-- <main> -->
-  <div class="plugin-page-container">
-    <div class="header-content full-screen">
+<div class="plugin-page-container">
+    <div class="header-content">
         <div class="content pep-border-bottom">
             <div class="left-container spacing-element-negative pull-left flip">
                 <div class="spacing-element title">
-                    {{ 'List_Example_Title' | translate }}
+                    {{ "List_Example_Title" | translate }}
                 </div>
             </div>
-            <div class="right-container spacing-element-negative pull-right flip">
+            <div
+                class="right-container spacing-element-negative pull-right flip"
+            >
                 <button mat-button class="pep-button weak md spacing-element">
                     Test
                 </button>
@@ -20,7 +22,7 @@
             </div>
         </div>
     </div>
-    <div class="main-content ">
+    <div class="main-content">
         <div class="content">
             <div class="list-container" #listContainer>
                 <pep-list
@@ -33,10 +35,10 @@
                     [parentScroll]="listContainer"
                     (notifyListChanged)="onListChange($event)"
                     (notifyFieldClicked)="onCustomizeFieldClick($event)"
-                    (notifySelectedItemsChanged)="selectedRowsChanged($event)">
+                    (notifySelectedItemsChanged)="selectedRowsChanged($event)"
+                >
                 </pep-list>
             </div>
-
         </div>
     </div>
 </div>

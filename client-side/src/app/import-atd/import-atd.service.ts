@@ -58,40 +58,6 @@ export class ImportAtdService {
         return this.appService.getPapiCall(`/types/${subtypeid}`);
     }
 
-    getTypes(successFunc = null, errorFunc = null) {
-        let types: KeyValuePair<string>[] = [];
-
-        this.appService.getPapiCall("/meta_data/transactions/types").subscribe(
-            (activityTypes) => {
-                if (activityTypes) {
-                    activityTypes.forEach((type) =>
-                        types.push({
-                            Key: type.InternalID,
-                            Value: type.ExternalID,
-                        })
-                    );
-                }
-                this.appService
-                    .getPapiCall("/meta_data/activities/types")
-                    .subscribe(
-                        (transactionTypes) => {
-                            if (transactionTypes) {
-                                transactionTypes.forEach((type) =>
-                                    types.push({
-                                        Key: type.InternalID,
-                                        Value: type.ExternalID,
-                                    })
-                                );
-                            }
-                            successFunc(types);
-                        }
-                        //errorFunc
-                    );
-            }
-            //errorFunc
-        );
-    }
-
     callToServerAPI(
         methodName: string,
         method: string,
@@ -111,9 +77,5 @@ export class ImportAtdService {
                 })
                 .toPromise();
         }
-    }
-
-    openDialog(title: string, content: string, callback?: any) {
-        this.appService.openDialog(title, content, callback);
     }
 }

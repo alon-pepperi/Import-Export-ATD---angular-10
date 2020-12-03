@@ -119,16 +119,15 @@ async function doExport(
         Description: atdMetaData.Description,
         ExternalID: atdMetaData.ExternalID,
         Addons: [],
-        Settings: settings,
         Fields: fields,
-        LineFields: [],
         Workflow: workflow,
         References: references,
         DataViews: dataViews,
       };
 
-      if (linesFields != null) {
+      if (type === `transactions`) {
         atd.LineFields = linesFields;
+        atd.Settings = settings;
       }
       const handleAddonPromises: Promise<void>[] = [];
       handleAddonPromises.push(
@@ -267,7 +266,7 @@ async function getSettingsReferences(
       catalogs.forEach((catalog) => {
         if (catalog.InternalID === CatalogID) {
           const reference: Reference = {
-            ID: catalog.InternalID,
+            ID: String(catalog.InternalID),
             Name: catalog.ExternalID,
             Type: ReferenceType.toString(ReferenceType.Catalog),
             UUID: catalog.UUID,
@@ -287,7 +286,7 @@ async function getSettingsReferences(
       `/meta_data/filters/${settings.TransactionItemsScopeFilterID}`
     );
     const reference: Reference = {
-      ID: filter.InternalID,
+      ID: String(filter.InternalID),
       Name: "Transaction Item Scope",
       Type: ReferenceType.toString(ReferenceType.Filter),
       UUID: filter.UUID,
@@ -336,15 +335,17 @@ async function getFieldsReferences(
           tableID
         );
         const udt: UserDefinedTableMetaData = JSON.parse(JSON.stringify(udts));
-        const reference: Reference = {
-          ID: String(udt.InternalID),
-          Name: udt.TableID,
-          Type: ReferenceType.toString(ReferenceType.UserDefinedTable),
-          Content: JSON.stringify(udt),
-        };
-        const isExist = references.findIndex((x) => x.ID == reference.ID);
-        if (isExist === -1) {
-          references.push(reference);
+        if (udt) {
+          const reference: Reference = {
+            ID: String(udt.InternalID),
+            Name: udt.TableID,
+            Type: ReferenceType.toString(ReferenceType.UserDefinedTable),
+            Content: JSON.stringify(udt),
+          };
+          const isExist = references.findIndex((x) => x.ID == reference.ID);
+          if (isExist === -1) {
+            references.push(reference);
+          }
         }
       }
     }
@@ -483,7 +484,7 @@ async function doImport(
     fixReferencesPromises.push(fixReferencesOfFields(service, atd.Fields, map));
     fixReferencesPromises.push(fixWorkflowReferences(atd.Workflow, map));
 
-    if (type === `transactions`) {
+    if (type === `transactions` && atd.Settings) {
       fixReferencesPromises.push(
         fixSettingsReferences(service, atd.Settings, map)
       );
@@ -502,14 +503,17 @@ async function doImport(
         upsertFields(service, atd.Fields, type, subtypeid),
         upsertWorkflow(service, atd.Workflow, type, subtypeid),
       ];
-      if (type === `transactions`) {
+      if (type === `transactions` && atd.LineFields) {
         upsertDataPromises.push(
           upsertFields(service, atd.LineFields, `transaction_lines`, subtypeid)
         );
+      }
+      if (type === `transactions` && atd.Settings) {
         upsertDataPromises.push(
           upsertSettings(service, type, subtypeid, atd.Settings)
         );
       }
+
       await Promise.all(upsertDataPromises).then((upsertDataResults) => {
         console.log(`result2: ${upsertDataResults}`);
         succeeded = upsertDataResults.every((elem) => elem === true);

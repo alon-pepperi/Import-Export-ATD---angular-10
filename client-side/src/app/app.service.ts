@@ -1,6 +1,10 @@
 import { Injectable } from "@angular/core";
 import { PepDialogData } from "@pepperi-addons/ngx-lib/dialog";
-import { AddonService, HttpService } from "@pepperi-addons/ngx-lib";
+import {
+    AddonService,
+    HttpService,
+    KeyValuePair,
+} from "@pepperi-addons/ngx-lib";
 import {
     DialogService,
     PepDialogActionButton,
@@ -61,14 +65,7 @@ export class AppService {
             actionButtons: [actionButton],
             type: "custom",
         });
-        this.dialogService
-            .openDefaultDialog(dialogData)
-            .afterClosed()
-            .subscribe((callback) => {
-                if (callback) {
-                    callback();
-                }
-            });
+        this.dialogService.openDefaultDialog(dialogData);
     }
 
     getFromAPI(apiObject, successFunc, errorFunc) {
@@ -101,5 +98,25 @@ export class AppService {
 
     postPapiCall(url: string, body: any) {
         return this.httpService.postPapiApiCall(url, body);
+    }
+
+    getTypes(successFunc = null) {
+        let types: KeyValuePair<string>[] = [];
+        this.getPapiCall("/meta_data/transactions/types").subscribe(
+            (activityTypes) => {
+                const data = (activityTypes || []).filter((i) => !!i);
+                this.getPapiCall("/meta_data/activities/types").subscribe(
+                    (transactionTypes) => {
+                        (transactionTypes || []).concat(data).forEach((type) =>
+                            types.push({
+                                Key: type.InternalID,
+                                Value: type.ExternalID,
+                            })
+                        );
+                        successFunc(types);
+                    }
+                );
+            }
+        );
     }
 }

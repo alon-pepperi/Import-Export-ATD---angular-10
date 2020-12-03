@@ -4,7 +4,7 @@
             <div class="spacing-element title">
                 <pep-separator
                     key="sep1"
-                    [label]="'Import type definition'"
+                    label="{{ 'Import_Type_Definition_Title' | translate }}"
                     xAlignment="'left'"
                 >
                 </pep-separator>
@@ -17,14 +17,14 @@
                 <div *ngIf="!showConflictResolution && !showWebhooksResolution">
                     <pep-select
                         [key]="'select1'"
-                        [label]="'Select activity to import'"
+                        label="{{ 'Select_Activity_To_Import' | translate }}"
                         [options]="activityTypes"
                         (valueChanged)="elementClicked($event)"
                     >
                     </pep-select>
                     <pep-attachment
                         [key]="'attachment1'"
-                        [label]="'Upload type definition file'"
+                        label="{{ 'Upload_ATD_File' | translate }}"
                         (valueChanged)="onFileSelect($event)"
                     >
                     </pep-attachment>
@@ -34,7 +34,7 @@
                         mat-button
                         class="spacing-element pep-button md strong ellipsis"
                     >
-                        Import
+                        {{ "Import_Button" | translate }}
                     </button>
                 </div>
             </div>
@@ -44,10 +44,9 @@
                 [ngClass]="{ 'hide-list': !showConflictResolution }"
             >
                 <p>
-                    <strong
-                        >Some conflicts were found. Please define the proper
-                        resolution.</strong
-                    >
+                    <strong>{{
+                        "Conflicts_Resolution_Title" | translate
+                    }}</strong>
                 </p>
 
                 <pep-list
@@ -68,7 +67,7 @@
                         mat-button
                         class="spacing-element pep-button md strong ellipsis"
                     >
-                        Cancel
+                        {{ "Cancel" | translate }}
                     </button>
                     <button
                         (click)="onOkConflictsClicked()"
@@ -76,7 +75,7 @@
                         mat-button
                         class="spacing-element pep-button md strong ellipsis"
                     >
-                        OK
+                        {{ "Ok" | translate }}
                     </button>
                 </div>
             </div>
@@ -87,9 +86,7 @@
                 [ngClass]="{ 'hide-list': !showWebhooksResolution }"
             >
                 <p>
-                    <strong
-                        >Please verify the following web services URLs.</strong
-                    >
+                    <strong>{{ "Webhooks_Table_Title" | translate }}</strong>
                 </p>
                 <pep-list
                     #webhookslist
@@ -109,7 +106,7 @@
                         mat-button
                         class="spacing-element pep-button md strong ellipsis"
                     >
-                        Cancel
+                        {{ "Cancel" | translate }}
                     </button>
                     <button
                         (click)="onOkWebhooksClicked()"
@@ -117,7 +114,7 @@
                         mat-button
                         class="spacing-element pep-button md strong ellipsis"
                     >
-                        OK
+                        {{ "Ok" | translate }}
                     </button>
                 </div>
             </div>
