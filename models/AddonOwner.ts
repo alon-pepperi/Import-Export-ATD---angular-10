@@ -1,4 +1,4 @@
 export interface AddonOwner {
-    ID: string;
-    UUID: string;
+  UUID: string;
+  Data: any;
 }

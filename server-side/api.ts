@@ -43,6 +43,8 @@ async function doExport(
   let linesFields: ApiFieldObject[];
   let dataViews: DataView[];
   let settings: ATDSettings;
+  let addons: AddonOwner[];
+
   let workflow;
 
   const getDataPromises: Promise<any>[] = [];
@@ -64,8 +66,23 @@ async function doExport(
     service.papiClient.metaData
       .type(type)
       .types.subtype(subtypeid)
-      .fields.get({ include_owned: false })
+      .fields.get({ include_owned: false, include_internal: true })
   );
+
+  //const getAddonsReferences: Promise<any>[] = [];
+  getDataPromises.push(
+    service.papiClient.get(`/meta_data/${type}/types/${subtypeid}/addons`)
+  );
+  getDataPromises.push(
+    service.papiClient.get(`/meta_data/user_defined_tables/addons`)
+  );
+  if (type === ObjectType.toString(ObjectType.transactions)) {
+    getDataPromises.push(
+      service.papiClient.get(
+        `/meta_data/transaction_lines/types/${subtypeid}/addons`
+      )
+    );
+  }
 
   if (type === `transactions`) {
     getDataPromises.push(
@@ -78,38 +95,53 @@ async function doExport(
       service.papiClient.metaData
         .type(`transaction_lines`)
         .types.subtype(subtypeid)
-        .fields.get({ include_owned: false })
+        .fields.get({ include_owned: false, include_internal: true })
     );
   }
 
-  await Promise.all(getDataPromises).then(async (result1) => {
-    console.log(`result1: ${result1}`);
-    atdMetaData = result1[0] as ATDMetaData;
-    dataViews = result1[1] as DataView[];
-    workflow = result1[2];
-    fields = result1[3] as ApiFieldObject[];
+  await Promise.all(getDataPromises).then(async (dataOfATDObjects) => {
+    console.log(`result1: ${dataOfATDObjects}`);
+    atdMetaData = dataOfATDObjects[0] as ATDMetaData;
+    dataViews = dataOfATDObjects[1] as DataView[];
+    workflow = dataOfATDObjects[2];
+    fields = dataOfATDObjects[3] as ApiFieldObject[];
+    fields = fields.filter(
+      (item) => item.FieldID.startsWith("TSA") || item.FieldID.startsWith("PSA")
+    );
 
+    let addonsRederences = dataOfATDObjects[4]
+      .concat(dataOfATDObjects[5].concat(dataOfATDObjects[6]))
+      .map((a) => a["AddonUUID"]);
+
+    addonsRederences = addonsRederences.filter(
+      (value, index) => addonsRederences.indexOf(value) === index
+    );
     const getReferencesPromises: Promise<void>[] = [];
-    getReferencesPromises.push(getDataViewReferences(references, dataViews));
+    getReferencesPromises.push(addDataViewReferences(references, dataViews));
     getReferencesPromises.push(
-      getWorkflowReferences(service, references, workflow)
+      addWorkflowReferences(service, references, workflow)
     );
     getReferencesPromises.push(
-      getFieldsReferences(service, references, fields)
+      addFieldsReferences(service, references, fields)
     );
 
     if (type === `transactions`) {
-      settings = result1[4] as ATDSettings;
-      linesFields = result1[5] as ApiFieldObject[];
+      settings = dataOfATDObjects[7] as ATDSettings;
+      linesFields = dataOfATDObjects[8] as ApiFieldObject[];
       getReferencesPromises.push(
-        getSettingsReferences(service, references, settings)
+        addSettingsReferences(service, references, settings)
       );
       getReferencesPromises.push(
-        getFieldsReferences(service, references, linesFields)
+        addFieldsReferences(service, references, linesFields)
       );
     }
+
+    addonsRederences.forEach((addon) => {
+      getReferencesPromises.push(addExportOfAddonResult(addon, service, addon));
+    });
     await Promise.all(getReferencesPromises).then(async (result2) => {
       console.log(`result2: ${result2}`);
+
       atd = {
         UUID: atdMetaData["UUID"],
         InternaID: String(atdMetaData.InternalID),
@@ -118,7 +150,7 @@ async function doExport(
         Hidden: atdMetaData.Hidden,
         Description: atdMetaData.Description,
         ExternalID: atdMetaData.ExternalID,
-        Addons: [],
+        Addons: addons,
         Fields: fields,
         Workflow: workflow,
         References: references,
@@ -126,16 +158,13 @@ async function doExport(
       };
 
       if (type === `transactions`) {
+        linesFields = linesFields.filter(
+          (item) =>
+            item.FieldID.startsWith("TSA") || item.FieldID.startsWith("PSA")
+        );
         atd.LineFields = linesFields;
         atd.Settings = settings;
       }
-      const handleAddonPromises: Promise<void>[] = [];
-      handleAddonPromises.push(
-        fillAddonReferencesAsync(service, atd, type, subtypeid)
-      );
-      handleAddonPromises.push(callExportOfAddons(service, atd));
-
-      await Promise.all(handleAddonPromises);
     });
   });
 
@@ -149,75 +178,21 @@ async function doExport(
   return { URL: presignedUrl.DownloadURL };
 }
 
-async function fillAddonReferencesAsync(
+async function addExportOfAddonResult(
+  addonUUID: string,
   service: MyService,
-  atd: ActivityTypeDefinition,
-  type: string,
-  subtypeid: string
+  addons: AddonOwner[]
 ) {
-  //const addons = await service.papiClient.metaData.type(type).types.subtype(subtypeid).addons();
-  const addons = await service.papiClient.get(
-    `/meta_data/${type}/types/${subtypeid}/addons`
-  );
-  addons.forEach((element) => {
-    const addon: AddonOwner = {
-      ID: element.InternalID,
-      UUID: element.AddonUUID,
-    };
-    atd.Addons.push(addon);
-  });
-  if (type === `transactions`) {
-    const addons = await service.papiClient.get(
-      `/meta_data/transaction_lines/types/${subtypeid}/addons`
-    );
-    addons.forEach((element) => {
-      const addon: AddonOwner = {
-        ID: element.InternalID,
-        UUID: element.AddonUUID,
-      };
-      atd.Addons.push(addon);
-    });
-  }
-  atd.Addons = addons;
+  service.papiClient.addons.installedAddons
+    .addonUUID(addonUUID)
+    .export()
+    .then((res) => {
+      addons.push({ UUID: addonUUID, Data: res });
+    })
+    .catch((e) => {});
 }
 
-async function callExportOfAddons(
-  service: MyService,
-  atd: ActivityTypeDefinition
-) {
-  atd.Addons.forEach((addon) => {
-    service.papiClient.addons.installedAddons.addonUUID(addon.UUID).install(); // Should be export
-  });
-}
-
-function fillAddonOwnerOfField(
-  addons: any,
-  field: ApiFieldObject,
-  atd: ActivityTypeDefinition
-) {
-  const addonIndex = addons.findIndex((x) => x.TableID == field.FieldID);
-  insertOwnerAddonIfNotExist(addonIndex, field.FieldID, addons, atd);
-}
-
-function insertOwnerAddonIfNotExist(
-  addonIndex: any,
-  id: string,
-  addons: any,
-  atd: ActivityTypeDefinition
-) {
-  if (addonIndex > 0) {
-    const addonOwner: AddonOwner = {
-      ID: id,
-      UUID: addons[addonIndex].AddonUUID,
-    };
-    const isExist = atd.Addons.findIndex((x) => x.ID == id);
-    if (isExist === -1) {
-      atd.Addons.push(addonOwner);
-    }
-  }
-}
-
-async function getSettingsReferences(
+async function addSettingsReferences(
   service: MyService,
   references: Reference[],
   settings: ATDSettings
@@ -299,7 +274,7 @@ async function getSettingsReferences(
   }
 }
 
-async function getFieldsReferences(
+async function addFieldsReferences(
   service: MyService,
   references: Reference[],
   fields: ApiFieldObject[]
@@ -352,7 +327,7 @@ async function getFieldsReferences(
   });
 }
 
-async function getDataViewReferences(
+async function addDataViewReferences(
   references: Reference[],
   data_views: DataView[]
 ) {
@@ -367,7 +342,7 @@ async function getDataViewReferences(
   });
 }
 
-async function getWorkflowReferences(
+async function addWorkflowReferences(
   service: MyService,
   references: Reference[],
   workflow: any
@@ -426,31 +401,26 @@ export async function import_type_definition(client: Client, request: Request) {
   if (subtypeid) {
     backupAtd = await doExport(type, subtypeid, service);
   }
-
-  const succeeded = await doImport(type, subtypeid, url, map, service);
+  let atd: ActivityTypeDefinition = <ActivityTypeDefinition>{};
+  const succeeded = await doImport(type, subtypeid, url, map, service, atd);
 
   if (succeeded) {
+    callImportOfAddons(service, atd.Addons);
     return `success`;
   } else {
     if (backupAtd) {
-      await doImport(type, subtypeid, backupAtd.URL, null, service);
+      await doImport(type, subtypeid, backupAtd.URL, null, service, atd);
     }
     return `failed`;
   }
 }
 
-function getDistributorUUID(client: Client) {
-  const decoded = jwt_decode(client.OAuthAccessToken);
-  const distUUID = decoded["pepperi.distributoruuid"];
-  return distUUID;
-}
-
-async function callImportOfAddons(
-  service: MyService,
-  atd: ActivityTypeDefinition
-) {
-  atd.Addons.forEach((addon) => {
-    service.papiClient.addons.installedAddons.addonUUID(addon.UUID).install(); // Should be import
+async function callImportOfAddons(service: MyService, addons: AddonOwner[]) {
+  addons.forEach((addon) => {
+    service.papiClient.addons.installedAddons
+      .addonUUID(addon.UUID)
+      .install()
+      .catch((e) => {});
   });
 }
 
@@ -459,9 +429,9 @@ async function doImport(
   subtypeid: string,
   url: string,
   map: References | null,
-  service: MyService
+  service: MyService,
+  atd: ActivityTypeDefinition
 ): Promise<boolean> {
-  let atd: ActivityTypeDefinition = <ActivityTypeDefinition>{};
   let succeeded = false;
   await fetch(url, {
     method: `GET`,
@@ -628,14 +598,16 @@ async function upsertFields(
   subtype: string
 ): Promise<boolean> {
   try {
-    fields = fields.filter((item) => item.FieldID.startsWith("TSA"));
+    fields = fields.filter(
+      (item) => item.FieldID.startsWith("TSA") || item.FieldID.startsWith("PSA")
+    );
     fields.forEach((f) => delete f.InternalID);
     let currentFields = await service.papiClient.metaData
       .type(type)
       .types.subtype(subtype)
-      .fields.get({ include_owned: false });
-    currentFields = currentFields.filter((item) =>
-      item.FieldID.startsWith("TSA")
+      .fields.get({ include_owned: false, include_internal: false });
+    currentFields = currentFields.filter(
+      (item) => item.FieldID.startsWith("TSA") || item.FieldID.startsWith("PSA")
     );
     const filedsNamesToUpsert = fields.map((f) => f.FieldID);
     const fieldsToDelete = currentFields.filter(

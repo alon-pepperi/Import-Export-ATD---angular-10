@@ -19,13 +19,13 @@
                         [key]="'select1'"
                         label="{{ 'Select_Activity_To_Import' | translate }}"
                         [options]="activityTypes"
-                        (valueChanged)="elementClicked($event)"
+                        (valueChange)="elementClicked($event)"
                     >
                     </pep-select>
                     <pep-attachment
                         [key]="'attachment1'"
                         label="{{ 'Upload_ATD_File' | translate }}"
-                        (valueChanged)="onFileSelect($event)"
+                        (valueChange)="onFileSelect($event)"
                     >
                     </pep-attachment>
                     <button
@@ -58,7 +58,7 @@
                     [selectionTypeForActions]="'none'"
                     [noDataFoundMsg]="'No data'"
                     [parentScroll]="conflictslistContainer"
-                    (notifyValueChanged)="notifyValueChanged($event)"
+                    (valueChange)="notifyValueChanged($event)"
                 >
                 </pep-list>
                 <div class="buttons-container">
@@ -97,7 +97,7 @@
                     [selectionTypeForActions]="'none'"
                     [noDataFoundMsg]="'No data'"
                     [parentScroll]="webhookslistContainer"
-                    (notifyValueChanged)="notifyValueChanged($event)"
+                    (valueChange)="notifyValueChanged($event)"
                 >
                 </pep-list>
                 <div class="buttons-container">
