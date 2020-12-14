@@ -1,41 +1,61 @@
-<div class="addon-container">
+<div class="plugin-page-container">
     <div class="header-content">
-        <div class="content">
-            <div class="spacing-element title">
-                <pep-separator
-                    key="sep1"
-                    label="{{ 'Import_Type_Definition_Title' | translate }}"
-                    xAlignment="'left'"
-                >
-                </pep-separator>
+        <div class="content pep-border-bottom">
+            <div class="left-container spacing-element-negative pull-left flip">
+                <div class="spacing-element title">
+                    {{ "Import_Type_Definition_Title" | translate }}
+                </div>
             </div>
         </div>
     </div>
     <div class="main-content">
         <div class="content">
-            <div class="child1 child-container">
-                <div *ngIf="!showConflictResolution && !showWebhooksResolution">
-                    <pep-select
-                        [key]="'select1'"
-                        label="{{ 'Select_Activity_To_Import' | translate }}"
-                        [options]="activityTypes"
-                        (valueChange)="elementClicked($event)"
+            <div
+                *ngIf="!showConflictResolution && !showWebhooksResolution"
+                class="left-container body-sm spacing-element-negative pull-left flip"
+                style="display: contents"
+            >
+                <div class="child1 child-container">
+                    <div
+                        class="spacing-element"
+                        style="padding-bottom: 2rem; width: 100%"
                     >
-                    </pep-select>
-                    <pep-attachment
-                        [key]="'attachment1'"
-                        label="{{ 'Upload_ATD_File' | translate }}"
-                        (valueChange)="onFileSelect($event)"
+                        {{ "Import_Description" | translate }}
+                    </div>
+                    <div
+                        *ngIf="
+                            !showConflictResolution && !showWebhooksResolution
+                        "
                     >
-                    </pep-attachment>
-                    <button
-                        (click)="importAtd()"
-                        rowSpan="2"
-                        mat-button
-                        class="spacing-element pep-button md strong ellipsis"
-                    >
-                        {{ "Import_Button" | translate }}
-                    </button>
+                        <pep-select
+                            [key]="'select1'"
+                            label="{{
+                                'Select_Activity_To_Import' | translate
+                            }}"
+                            [options]="activityTypes"
+                            (valueChange)="elementClicked($event)"
+                        >
+                        </pep-select>
+                        <pep-attachment
+                            rowSpan="2"
+                            [key]="'attachment1'"
+                            label="{{ 'Upload_ATD_File' | translate }}"
+                            (valueChange)="onFileSelect($event)"
+                        >
+                        </pep-attachment>
+
+                        <button
+                            (click)="importAtd()"
+                            pepButtonLoader
+                            [ignoreDisabledStyle]="true"
+                            [loaderTime]="9000"
+                            rowSpan="2"
+                            mat-button
+                            class="spacing-element pep-button md strong ellipsis pull-right flip"
+                        >
+                            {{ "Import_Button" | translate }}
+                        </button>
+                    </div>
                 </div>
             </div>
             <div
@@ -43,18 +63,21 @@
                 #conflictslistContainer
                 [ngClass]="{ 'hide-list': !showConflictResolution }"
             >
-                <p>
-                    <strong>{{
-                        "Conflicts_Resolution_Title" | translate
-                    }}</strong>
-                </p>
+                <div
+                    class="left-container body-sm spacing-element-negative pull-left flip"
+                    style="display: contents"
+                >
+                    <div class="spacing-element" style="padding-bottom: 2rem">
+                        {{ "Conflicts_Resolution_Title" | translate }}
+                    </div>
+                </div>
 
                 <pep-list
                     #conflictslist
                     [firstFieldAsLink]="false"
                     [isReport]="false"
                     [supportSorting]="false"
-                    [supportResizing]="false"
+                    [supportResizing]="true"
                     [selectionTypeForActions]="'none'"
                     [noDataFoundMsg]="'No data'"
                     [parentScroll]="conflictslistContainer"
@@ -63,15 +86,20 @@
                 </pep-list>
                 <div class="buttons-container">
                     <button
+                        (click)="onCancelClicked()"
                         rowSpan="2"
                         mat-button
-                        class="spacing-element pep-button md strong ellipsis"
+                        class="spacing-element pep-button md weak ellipsis"
                     >
                         {{ "Cancel" | translate }}
                     </button>
                     <button
                         (click)="onOkConflictsClicked()"
                         rowSpan="2"
+                        pepButtonLoader
+                        [disabled]="disableConflictButton"
+                        [ignoreDisabledStyle]="true"
+                        [loaderTime]="9000"
                         mat-button
                         class="spacing-element pep-button md strong ellipsis"
                     >
@@ -93,7 +121,7 @@
                     [firstFieldAsLink]="false"
                     [isReport]="false"
                     [supportSorting]="false"
-                    [supportResizing]="false"
+                    [supportResizing]="true"
                     [selectionTypeForActions]="'none'"
                     [noDataFoundMsg]="'No data'"
                     [parentScroll]="webhookslistContainer"
@@ -102,9 +130,10 @@
                 </pep-list>
                 <div class="buttons-container">
                     <button
+                        (click)="onCancelClicked()"
                         rowSpan="2"
                         mat-button
-                        class="spacing-element pep-button md strong ellipsis"
+                        class="spacing-element pep-button md weak ellipsis"
                     >
                         {{ "Cancel" | translate }}
                     </button>
@@ -112,6 +141,9 @@
                         (click)="onOkWebhooksClicked()"
                         rowSpan="2"
                         mat-button
+                        pepButtonLoader
+                        [ignoreDisabledStyle]="true"
+                        [loaderTime]="9000"
                         class="spacing-element pep-button md strong ellipsis"
                     >
                         {{ "Ok" | translate }}

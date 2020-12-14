@@ -1,7 +1,7 @@
 export const ResolutionOption = Object.freeze({
-  UseExisting: 0,
-  OverwriteExisting: 1,
-  CreateNew: 2,
+  UseExisting: 1,
+  OverwriteExisting: 2,
+  CreateNew: 3,
 
   toString: function (enumValue) {
     switch (enumValue) {

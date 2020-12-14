@@ -111,7 +111,7 @@ async function doExport(
 
     let addonsRederences = dataOfATDObjects[4]
       .concat(dataOfATDObjects[5].concat(dataOfATDObjects[6]))
-      .map((a) => a["AddonUUID"]);
+      .map((a) => a && a["AddonUUID"]);
 
     addonsRederences = addonsRederences.filter(
       (value, index) => addonsRederences.indexOf(value) === index
@@ -210,7 +210,7 @@ async function addSettingsReferences(
       const reference: Reference = {
         ID: String(accontsMetaData[accountIndex].InternalID),
         Name: accontsMetaData[accountIndex].ExternalID,
-        Type: ReferenceType.toString(ReferenceType.TypeDefinition),
+        Type: ReferenceType.toString(ReferenceType.AccountType),
       };
       const isExist = references.findIndex((x) => x.ID == reference.ID);
       if (isExist === -1) {
@@ -227,7 +227,7 @@ async function addSettingsReferences(
       const reference: Reference = {
         ID: String(accontsMetaData[accountIndex].InternalID),
         Name: accontsMetaData[accountIndex].ExternalID,
-        Type: ReferenceType.toString(ReferenceType.TypeDefinition),
+        Type: ReferenceType.toString(ReferenceType.AccountType),
       };
       const isExist = references.findIndex((x) => x.ID == reference.ID);
       if (isExist === -1) {
@@ -279,7 +279,11 @@ async function addFieldsReferences(
   references: Reference[],
   fields: ApiFieldObject[]
 ) {
-  fields.forEach(async (field) => {
+  for (const field of fields) {
+    await addFieldReference(field);
+  }
+
+  async function addFieldReference(field: ApiFieldObject) {
     if (field.TypeSpecificFields != null) {
       if (field.TypeSpecificFields.ReferenceToResourceType != null) {
         const referenceId = field.TypeSpecificFields.ReferenceToResourceType.ID;
@@ -291,15 +295,18 @@ async function addFieldsReferences(
             (x) =>
               x.ExternalID == field.TypeSpecificFields.ReferenceTo.ExternalID
           );
-          const reference: Reference = {
-            ID: String(res[index].InternalID),
-            Name: res[index].ExternalID,
-            Type: ReferenceType.toString(ReferenceType.TypeDefinition),
-            UUID: field.TypeSpecificFields.ReferenceTo.UUID,
-          };
-          const isExist = references.findIndex((x) => x.ID == reference.ID);
-          if (isExist === -1) {
-            references.push(reference);
+          // to remove
+          if (index > -1) {
+            const reference: Reference = {
+              ID: String(res[index].InternalID),
+              Name: res[index].ExternalID,
+              Type: ReferenceType.typeToRefernceType(referenceId),
+              UUID: field.TypeSpecificFields.ReferenceTo.UUID,
+            };
+            const isExist = references.findIndex((x) => x.ID == reference.ID);
+            if (isExist === -1) {
+              references.push(reference);
+            }
           }
         }
       }
@@ -324,7 +331,7 @@ async function addFieldsReferences(
         }
       }
     }
-  });
+  }
 }
 
 async function addDataViewReferences(
@@ -375,6 +382,16 @@ async function addWorkflowReferences(
           .then(
             (res) => (reference.Path = JSON.parse(JSON.stringify(res)).URL)
           );
+      }
+      // to remove
+      if (reference.Type === "TypeDefinition") {
+        service.papiClient.types
+          .find({
+            where: `InternalID=${element.ID}`,
+          })
+          .then((res) => {
+            reference.Type = ReferenceType.typeToRefernceType(res[0].Type);
+          });
       }
       references.push(reference);
     }
@@ -740,45 +757,49 @@ async function fixReferencesOfFields(
   map: References
 ): Promise<boolean> {
   try {
-    fields.forEach(async (field) => {
-      if (field.TypeSpecificFields != null) {
-        if (field.TypeSpecificFields != null) {
-          if (field.TypeSpecificFields.ReferenceToResourceType != null) {
-            const referenceUUID =
-              field.TypeSpecificFields.ReferenceToResourceType.UUID;
-            if (referenceUUID != null) {
-              const pairIndex = map.Mapping.findIndex(
-                (x) => x.Origin.UUID === String(referenceUUID)
-              );
-              field.TypeSpecificFields.ReferenceTo.ExternalID =
-                map.Mapping[pairIndex].Destination.Name;
-              field.TypeSpecificFields.ReferenceTo.UUID =
-                map.Mapping[pairIndex].Destination.UUID;
-            }
-          }
-        }
-        if (field.UserDefinedTableSource != null) {
-          const pairIndex = map.Mapping.findIndex(
-            (x) => x.Origin.ID === field.UserDefinedTableSource.TableID
-          );
-          // if (map.Pairs[pairIndex].destinition === null) {
-          //     const upsertUdt: UserDefinedTableMetaData = await service.papiClient.metaData.userDefinedTables.upsert(
-          //         JSON.parse(String(map.Pairs[pairIndex].origin.Content)),
-          //     );
-          //     field.UserDefinedTableSource.TableID = upsertUdt.TableID;
-          //     field.UserDefinedTableSource.MainKey.TableID = upsertUdt.MainKeyType.Name;
-          //     field.UserDefinedTableSource.SecondaryKey.TableID = upsertUdt.SecondaryKeyType.Name;
-          // }
-          //field.UserDefinedTableSource.TableID = map.Pairs[pairIndex].destinition.
-        }
-      }
-    });
+    for (const field of fields) {
+      await fixFieldReference(field);
+    }
     console.log(`fix references Of fields succeeded`);
 
     return true;
   } catch (err) {
     console.error(`fix references Of fields failed. error: ${err}`);
     return false;
+  }
+
+  function fixFieldReference(field: ApiFieldObject) {
+    if (field.TypeSpecificFields != null) {
+      if (field.TypeSpecificFields != null) {
+        if (field.TypeSpecificFields.ReferenceToResourceType != null) {
+          const referenceUUID =
+            field.TypeSpecificFields.ReferenceToResourceType.UUID;
+          if (referenceUUID != null) {
+            const pairIndex = map.Mapping.findIndex(
+              (x) => x.Origin.UUID === String(referenceUUID)
+            );
+            field.TypeSpecificFields.ReferenceTo.ExternalID =
+              map.Mapping[pairIndex].Destination.Name;
+            field.TypeSpecificFields.ReferenceTo.UUID =
+              map.Mapping[pairIndex].Destination.UUID;
+          }
+        }
+      }
+      if (field.UserDefinedTableSource != null) {
+        const pairIndex = map.Mapping.findIndex(
+          (x) => x.Origin.ID === field.UserDefinedTableSource.TableID
+        );
+        // if (map.Pairs[pairIndex].destinition === null) {
+        //     const upsertUdt: UserDefinedTableMetaData = await service.papiClient.metaData.userDefinedTables.upsert(
+        //         JSON.parse(String(map.Pairs[pairIndex].origin.Content)),
+        //     );
+        //     field.UserDefinedTableSource.TableID = upsertUdt.TableID;
+        //     field.UserDefinedTableSource.MainKey.TableID = upsertUdt.MainKeyType.Name;
+        //     field.UserDefinedTableSource.SecondaryKey.TableID = upsertUdt.SecondaryKeyType.Name;
+        // }
+        //field.UserDefinedTableSource.TableID = map.Pairs[pairIndex].destinition.
+      }
+    }
   }
 }
 
@@ -1036,7 +1057,9 @@ function searchMappingByName(
           addOriginWithDestNull(ref, referencesMap);
           break;
         case ReferenceType.Profile:
-        case ReferenceType.TypeDefinition:
+        case ReferenceType.AccountType:
+        case ReferenceType.TransactionType:
+        case ReferenceType.ActivityType:
         case ReferenceType.List:
           const referenceDataNameIndex = referencesDataList.findIndex(
             (data) => data.Name && data.Name.toString() === ref.Name
@@ -1178,8 +1201,14 @@ async function GetReferencesData(
   const fileIndex = exportReferences.findIndex(
     (ref) => ref.Type === ReferenceType.toString(ReferenceType.FileStorage)
   );
-  const activityTypeDefinitionIndex = exportReferences.findIndex(
-    (ref) => ref.Type === ReferenceType.toString(ReferenceType.TypeDefinition)
+  const activityTypeIndex = exportReferences.findIndex(
+    (ref) => ref.Type === ReferenceType.toString(ReferenceType.ActivityType)
+  );
+  const transactionTypeDefinitionIndex = exportReferences.findIndex(
+    (ref) => ref.Type === ReferenceType.toString(ReferenceType.TransactionType)
+  );
+  const accountTypeDefinitionIndex = exportReferences.findIndex(
+    (ref) => ref.Type === ReferenceType.toString(ReferenceType.AccountType)
   );
   const catalogIndex = exportReferences.findIndex(
     (ref) => ref.Type === ReferenceType.toString(ReferenceType.Catalog)
@@ -1224,7 +1253,7 @@ async function GetReferencesData(
   }
   if (profileIndex > -1) {
     promises.push(service.papiClient.profiles.iter().toArray());
-    callbaks.push("Profile");
+    callbaks.push(ReferenceType.toString(ReferenceType.Profile));
   }
   if (fileIndex > -1) {
     promises.push(
@@ -1232,15 +1261,35 @@ async function GetReferencesData(
         fields: ["InternalID", "Title", "URL"],
       })
     );
-    callbaks.push("FileStorage");
+    callbaks.push(ReferenceType.toString(ReferenceType.FileStorage));
   }
-  if (activityTypeDefinitionIndex > -1) {
+
+  if (transactionTypeDefinitionIndex > -1) {
     promises.push(
       service.papiClient.types.find({
         fields: ["InternalID", "Name"],
+        where: "Type=2",
       })
     );
-    callbaks.push("TypeDefinition");
+    callbaks.push(ReferenceType.toString(ReferenceType.TransactionType));
+  }
+  if (activityTypeIndex > -1) {
+    promises.push(
+      service.papiClient.types.find({
+        fields: ["InternalID", "Name"],
+        where: "Type=99",
+      })
+    );
+    callbaks.push(ReferenceType.toString(ReferenceType.ActivityType));
+  }
+  if (accountTypeDefinitionIndex > -1) {
+    promises.push(
+      service.papiClient.types.find({
+        fields: ["InternalID", "Name"],
+        where: "Type=35",
+      })
+    );
+    callbaks.push(ReferenceType.toString(ReferenceType.AccountType));
   }
   if (catalogIndex > -1) {
     promises.push(
@@ -1254,13 +1303,13 @@ async function GetReferencesData(
         `/meta_data/lists/all_activities?where=Name='Transaction Item Scope'`
       )
     );
-    callbaks.push("Filter");
+    callbaks.push(ReferenceType.toString(ReferenceType.Filter));
   }
   if (udtIndex > -1) {
     promises.push(
       service.papiClient.metaData.userDefinedTables.iter().toArray()
     );
-    callbaks.push("UserDefinedTable");
+    callbaks.push(ReferenceType.toString(ReferenceType.UserDefinedTable));
   }
   await Promise.all(promises).then((res) => {
     for (let i = 0; i < callbaks.length; i++) {

@@ -1,9 +1,5 @@
 import { Component, OnInit, ViewChild } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
-import {
-    PepGroupButtonsViewType,
-    PepGroupButton,
-} from "@pepperi-addons/ngx-lib/group-buttons";
 import { ObjectType } from "./../../../../models/ObjectType.enum";
 
 import {

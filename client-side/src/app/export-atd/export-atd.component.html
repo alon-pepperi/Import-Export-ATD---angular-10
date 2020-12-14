@@ -1,13 +1,10 @@
-<div class="addon-container">
+<div class="plugin-page-container">
     <div class="header-content">
-        <div class="content">
-            <div class="spacing-element title">
-                <pep-separator
-                    key="sep1"
-                    label="{{ 'Export_Type_Definition_Title' | translate }}"
-                    xAlignment="'left'"
-                >
-                </pep-separator>
+        <div class="content pep-border-bottom">
+            <div class="left-container spacing-element-negative pull-left flip">
+                <div class="spacing-element title">
+                    {{ "Export_Type_Definition_Title" | translate }}
+                </div>
             </div>
         </div>
     </div>
@@ -17,7 +14,7 @@
                 <pep-select
                     required="false"
                     xAlignment="'right'"
-                    rowSpan="1"
+                    rowSpan="2"
                     key="select1"
                     label="{{ 'Select_Activity_To_Export' | translate }}"
                     value="selectedActivity"
@@ -30,8 +27,11 @@
                 <button
                     rowSpan="2"
                     mat-button
+                    pepButtonLoader
+                    [ignoreDisabledStyle]="true"
+                    [loaderTime]="9000"
                     (click)="exportAtd()"
-                    class="spacing-element pep-button md strong ellipsis"
+                    class="spacing-element pep-button md strong ellipsis pull-right flip"
                 >
                     {{ "Export_Button" | translate }}
                 </button>

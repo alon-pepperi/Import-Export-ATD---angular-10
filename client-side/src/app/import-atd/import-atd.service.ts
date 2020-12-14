@@ -54,6 +54,7 @@ export class ImportAtdService {
             return this.appService.postPapiCall(url, body).toPromise();
         }
     }
+
     getTypeOfSubType(subtypeid: string) {
         return this.appService.getPapiCall(`/types/${subtypeid}`);
     }

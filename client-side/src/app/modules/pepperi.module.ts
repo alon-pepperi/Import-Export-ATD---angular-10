@@ -18,7 +18,6 @@ import { PepCheckboxModule } from "@pepperi-addons/ngx-lib/checkbox";
 import { PepFilesUploaderModule } from "@pepperi-addons/ngx-lib/files-uploader";
 import { PepColorModule } from "@pepperi-addons/ngx-lib/color";
 import { PepDateModule } from "@pepperi-addons/ngx-lib/date";
-import { PepGroupButtonsModule } from "@pepperi-addons/ngx-lib/group-buttons";
 import { PepImageModule } from "@pepperi-addons/ngx-lib/image";
 import { PepImagesFilmstripModule } from "@pepperi-addons/ngx-lib/images-filmstrip";
 // import { PepInternalButtonModule } from "@pepperi-addons/ngx-lib/internal-button";
@@ -46,7 +45,12 @@ export function createTranslateLoader(
     fileService: FileService,
     addonService: AddonService
 ) {
-    const addonStaticFolder = addonService.getAddonStaticFolder();
+    let addonStaticFolder = addonService.getAddonStaticFolder();
+    addonStaticFolder =
+        window.location.href.includes("localhost") ||
+        addonStaticFolder.includes("localhost")
+            ? ""
+            : addonStaticFolder;
     const translationsPath: string = fileService.getAssetsTranslationsPath();
     const translationsSuffix: string = fileService.getAssetsTranslationsSuffix();
 
@@ -73,7 +77,6 @@ const pepperiComponentsModules = [
     PepCheckboxModule,
     PepColorModule,
     PepDateModule,
-    PepGroupButtonsModule,
     PepImageModule,
     PepImagesFilmstripModule,
     PepListModule,

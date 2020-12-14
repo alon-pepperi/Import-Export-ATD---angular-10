@@ -10,7 +10,9 @@ export interface ReferenceData {
   Filter: [];
   UserDefinedTable: UserDefinedTableMetaData[];
   FileStorage: FileStorage[];
-  TypeDefinition: Type[];
+  AccountType: Type[];
+  TransactionType: Type[];
+  ActivityType: Type[];
   Profile: [];
   Catalog: [];
   List: [];

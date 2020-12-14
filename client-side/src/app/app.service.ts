@@ -64,6 +64,7 @@ export class AppService {
             content: content,
             actionButtons: [actionButton],
             type: "custom",
+            showClose: false,
         });
         this.dialogService.openDefaultDialog(dialogData);
     }

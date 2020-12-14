@@ -1,13 +1,15 @@
 export const ReferenceType = Object.freeze({
   None: 0,
   List: 1,
-  TypeDefinition: 2,
-  Webhook: 3,
-  FileStorage: 4,
-  Profile: 5,
-  Catalog: 6,
-  Filter: 7,
-  UserDefinedTable: 8,
+  AccountType: 2,
+  TransactionType: 3,
+  ActivityType: 4,
+  Webhook: 5,
+  FileStorage: 6,
+  Profile: 7,
+  Catalog: 8,
+  Filter: 9,
+  UserDefinedTable: 10,
 
   toString: function (enumValue) {
     switch (enumValue) {
@@ -19,8 +21,6 @@ export const ReferenceType = Object.freeze({
         return "List";
       case this.FileStorage:
         return "FileStorage";
-      case this.TypeDefinition:
-        return "TypeDefinition";
       case this.Catalog:
         return "Catalog";
       case this.Filter:
@@ -29,8 +29,40 @@ export const ReferenceType = Object.freeze({
         return "UserDefinedTable";
       case this.Webhook:
         return "Webhook";
+      case this.TransactionType:
+        return "TransactionType";
+      case this.ActivityType:
+        return "ActivityType";
+      case this.AccountType:
+        return "AccountType";
       default:
         return "None";
+    }
+  },
+
+  typeToRefernceType: function (type) {
+    switch (type) {
+      case 35:
+        return "AccountType";
+      case 2:
+        return "TransactionType";
+      case 99:
+        return "ActivityType";
+
+      default:
+        return "None";
+    }
+  },
+
+  isTypeDefinition: function (type) {
+    if (
+      type === "TransactionType" ||
+      type === "ActivityType" ||
+      type === "AccountType"
+    ) {
+      return true;
+    } else {
+      return false;
     }
   },
 
