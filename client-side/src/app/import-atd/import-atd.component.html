@@ -22,11 +22,7 @@
                     >
                         {{ "Import_Description" | translate }}
                     </div>
-                    <div
-                        *ngIf="
-                            !showConflictResolution && !showWebhooksResolution
-                        "
-                    >
+                    <div>
                         <pep-select
                             [key]="'select1'"
                             label="{{
@@ -45,12 +41,10 @@
                         </pep-attachment>
 
                         <button
-                            (click)="importAtd()"
                             pepButtonLoader
                             [ignoreDisabledStyle]="true"
-                            [loaderTime]="9000"
-                            rowSpan="2"
-                            mat-button
+                            [finish]="isCallbackImportFinish"
+                            (click)="importAtd()"
                             class="spacing-element pep-button md strong ellipsis pull-right flip"
                         >
                             {{ "Import_Button" | translate }}
@@ -95,11 +89,10 @@
                     </button>
                     <button
                         (click)="onOkConflictsClicked()"
-                        rowSpan="2"
                         pepButtonLoader
                         [disabled]="disableConflictButton"
                         [ignoreDisabledStyle]="true"
-                        [loaderTime]="9000"
+                        [finish]="isCallbackConflictsFinish"
                         mat-button
                         class="spacing-element pep-button md strong ellipsis"
                     >
@@ -139,11 +132,11 @@
                     </button>
                     <button
                         (click)="onOkWebhooksClicked()"
-                        rowSpan="2"
-                        mat-button
                         pepButtonLoader
+                        [disabled]="disableConflictButton"
                         [ignoreDisabledStyle]="true"
-                        [loaderTime]="9000"
+                        [finish]="isCallbackWebhokksFinish"
+                        mat-button
                         class="spacing-element pep-button md strong ellipsis"
                     >
                         {{ "Ok" | translate }}

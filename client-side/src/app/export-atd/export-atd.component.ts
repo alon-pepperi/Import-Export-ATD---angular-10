@@ -34,7 +34,7 @@ import { AppService } from "../app.service";
 })
 export class ExportAtdComponent implements OnInit {
     data: any;
-
+    isCallbackExportFinish = false;
     activityTypes: KeyValuePair<string>[];
     selectedActivity: any;
     title = "pepperi web app test";
@@ -73,6 +73,7 @@ export class ExportAtdComponent implements OnInit {
     }
 
     exportAtd() {
+        this.isCallbackExportFinish = false;
         debugger;
         let typeString = ``;
         this.exportatdService
@@ -86,6 +87,7 @@ export class ExportAtdComponent implements OnInit {
                 this.exportatdService
                     .callToExportATDAPI(typeString, this.selectedActivity)
                     .subscribe((res) => {
+                        this.isCallbackExportFinish = true;
                         this.data = res.URL;
                         this.appService.openDialog(
                             this.translate.instant("Export_ATD_Dialog_Title"),

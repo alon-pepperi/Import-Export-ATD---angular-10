@@ -210,7 +210,8 @@ async function addSettingsReferences(
       const reference: Reference = {
         ID: String(accontsMetaData[accountIndex].InternalID),
         Name: accontsMetaData[accountIndex].ExternalID,
-        Type: ReferenceType.toString(ReferenceType.AccountType),
+        Type: "type_definition",
+        SubType: ObjectType.toString(ObjectType.accounts),
       };
       const isExist = references.findIndex((x) => x.ID == reference.ID);
       if (isExist === -1) {
@@ -227,7 +228,8 @@ async function addSettingsReferences(
       const reference: Reference = {
         ID: String(accontsMetaData[accountIndex].InternalID),
         Name: accontsMetaData[accountIndex].ExternalID,
-        Type: ReferenceType.toString(ReferenceType.AccountType),
+        Type: "type_definition",
+        SubType: ObjectType.toString(ObjectType.accounts),
       };
       const isExist = references.findIndex((x) => x.ID == reference.ID);
       if (isExist === -1) {
@@ -243,7 +245,7 @@ async function addSettingsReferences(
           const reference: Reference = {
             ID: String(catalog.InternalID),
             Name: catalog.ExternalID,
-            Type: ReferenceType.toString(ReferenceType.Catalog),
+            Type: "catalog",
             UUID: catalog.UUID,
           };
           const index = references.findIndex((x) => x.ID == reference.ID);
@@ -263,7 +265,7 @@ async function addSettingsReferences(
     const reference: Reference = {
       ID: String(filter.InternalID),
       Name: "Transaction Item Scope",
-      Type: ReferenceType.toString(ReferenceType.Filter),
+      Type: "filter",
       UUID: filter.UUID,
       Content: JSON.stringify(filter.Data),
     };
@@ -300,7 +302,8 @@ async function addFieldsReferences(
             const reference: Reference = {
               ID: String(res[index].InternalID),
               Name: res[index].ExternalID,
-              Type: ReferenceType.typeToRefernceType(referenceId),
+              Type: "type_definition",
+              SubType: getTypeFromId(referenceId),
               UUID: field.TypeSpecificFields.ReferenceTo.UUID,
             };
             const isExist = references.findIndex((x) => x.ID == reference.ID);
@@ -321,7 +324,7 @@ async function addFieldsReferences(
           const reference: Reference = {
             ID: String(udt.InternalID),
             Name: udt.TableID,
-            Type: ReferenceType.toString(ReferenceType.UserDefinedTable),
+            Type: "user_defined_table",
             Content: JSON.stringify(udt),
           };
           const isExist = references.findIndex((x) => x.ID == reference.ID);
@@ -334,6 +337,20 @@ async function addFieldsReferences(
   }
 }
 
+function getTypeFromId(type) {
+  switch (type) {
+    case 35:
+      return "AccountType";
+    case 2:
+      return "TransactionType";
+    case 99:
+      return "ActivityType";
+
+    default:
+      return "None";
+  }
+}
+
 async function addDataViewReferences(
   references: Reference[],
   data_views: DataView[]
@@ -342,7 +359,7 @@ async function addDataViewReferences(
     const reference: Reference = {
       ID: String(element.Context?.Profile.InternalID),
       Name: String(element.Context?.Profile.Name),
-      Type: ReferenceType.toString(ReferenceType.Profile),
+      Type: "profile",
     };
     const index = references.findIndex((x) => x.ID == reference.ID);
     if (index === -1) references.push(reference);
@@ -361,6 +378,7 @@ async function addWorkflowReferences(
       ID: element.ID,
       Name: element.Name,
       Type: element.Type,
+      SubType: element.SubType,
       UUID: element.UUID,
       Path: element.Path,
       Content: element.Content,
@@ -374,9 +392,7 @@ async function addWorkflowReferences(
     }
 
     if (index === -1) {
-      if (
-        reference.Type === ReferenceType.toString(ReferenceType.FileStorage)
-      ) {
+      if (reference.Type === "file_storage") {
         service.papiClient.fileStorage
           .get(Number(reference.ID))
           .then(
@@ -384,15 +400,15 @@ async function addWorkflowReferences(
           );
       }
       // to remove
-      if (reference.Type === "TypeDefinition") {
-        service.papiClient.types
-          .find({
-            where: `InternalID=${element.ID}`,
-          })
-          .then((res) => {
-            reference.Type = ReferenceType.typeToRefernceType(res[0].Type);
-          });
-      }
+      //   if (reference.Type === "TypeDefinition") {
+      //     service.papiClient.types
+      //       .find({
+      //         where: `InternalID=${element.ID}`,
+      //       })
+      //       .then((res) => {
+      //         reference.Type = ReferenceType.typeToRefernceType(res[0].Type);
+      //       });
+      //   }
       references.push(reference);
     }
   });
@@ -1051,16 +1067,14 @@ function searchMappingByName(
     );
     if (refIndex == -1) {
       referencesDataList = referencesData[ref.Type];
-      switch (ReferenceType[ref.Type]) {
-        case ReferenceType.Filter:
+      switch (ref.Type) {
+        case "filter":
           //We will always run over if it does not exist with the same ID
           addOriginWithDestNull(ref, referencesMap);
           break;
-        case ReferenceType.Profile:
-        case ReferenceType.AccountType:
-        case ReferenceType.TransactionType:
-        case ReferenceType.ActivityType:
-        case ReferenceType.List:
+        case "profile":
+        case "type_definition":
+        case "list":
           const referenceDataNameIndex = referencesDataList.findIndex(
             (data) => data.Name && data.Name.toString() === ref.Name
           );
@@ -1074,7 +1088,7 @@ function searchMappingByName(
             addOriginWithDestNull(ref, referencesMap);
           }
           break;
-        case ReferenceType.FileStorage:
+        case "file_storage":
           const referenceDataFileNameIndex = referencesDataList.findIndex(
             (data) => data.Title && data.Title.toString() === ref.Name
           );
@@ -1088,7 +1102,7 @@ function searchMappingByName(
             addOriginWithDestNull(ref, referencesMap);
           }
           break;
-        case ReferenceType.Catalog:
+        case "catalog":
           const referenceDataExternalIDIndex = referencesDataList.findIndex(
             (data) => data.ExternalID && data.ExternalID.toString() === ref.Name
           );
@@ -1102,7 +1116,7 @@ function searchMappingByName(
             addOriginWithDestNull(ref, referencesMap);
           }
           break;
-        case ReferenceType.UserDefinedTable:
+        case "user_defined_table":
           const referenceDataTableIDIndex = referencesDataList.findIndex(
             (data) => data.TableID && data.TableID.toString() === ref.Name
           );
@@ -1133,7 +1147,7 @@ function searchMappingByID(
   referencesMap: References
 ) {
   exportReferences.forEach((ref) => {
-    if (ref.Type !== ReferenceType.toString(ReferenceType.Webhook)) {
+    if (ref.Type !== "webhook") {
       let referencesDataList: any = [];
       referencesDataList = referencesData[ref.Type];
       const referenceDataIdIndex = referencesDataList.findIndex(
@@ -1193,36 +1207,31 @@ async function GetReferencesData(
   exportReferences: Reference[]
 ): Promise<any> {
   const profileIndex = exportReferences.findIndex(
-    (ref) => ref.Type === ReferenceType.toString(ReferenceType.Profile)
+    (ref) => ref.Type === "profile"
   );
   const genericListIndex = exportReferences.findIndex(
-    (ref) => ref.Type === ReferenceType.toString(ReferenceType.List)
+    (ref) => ref.Type === "list"
   );
   const fileIndex = exportReferences.findIndex(
-    (ref) => ref.Type === ReferenceType.toString(ReferenceType.FileStorage)
+    (ref) => ref.Type === "file_storage"
   );
   const activityTypeIndex = exportReferences.findIndex(
-    (ref) => ref.Type === ReferenceType.toString(ReferenceType.ActivityType)
+    (ref) => ref.Type === "type_definition"
   );
-  const transactionTypeDefinitionIndex = exportReferences.findIndex(
-    (ref) => ref.Type === ReferenceType.toString(ReferenceType.TransactionType)
-  );
-  const accountTypeDefinitionIndex = exportReferences.findIndex(
-    (ref) => ref.Type === ReferenceType.toString(ReferenceType.AccountType)
-  );
+
   const catalogIndex = exportReferences.findIndex(
-    (ref) => ref.Type === ReferenceType.toString(ReferenceType.Catalog)
+    (ref) => ref.Type === "catalog"
   );
   const filterIndex = exportReferences.findIndex(
-    (ref) => ref.Type === ReferenceType.toString(ReferenceType.Filter)
+    (ref) => ref.Type === "filter"
   );
   const udtIndex = exportReferences.findIndex(
-    (ref) => ref.Type === ReferenceType.toString(ReferenceType.UserDefinedTable)
+    (ref) => ref.Type === "user_defined_table"
   );
 
   const referencesData = {} as ReferenceData;
   const promises: any = [];
-  const callbaks: string[] = [];
+  const callbaks: ReferenceType[] = [];
   const listPromises: Promise<any>[] = [];
 
   if (genericListIndex > -1) {
@@ -1248,12 +1257,12 @@ async function GetReferencesData(
       )
     );
     await Promise.all(listPromises).then(
-      (res) => (referencesData.List = res[0].concat(res[1]))
+      (res) => (referencesData.list = res[0].concat(res[1]))
     );
   }
   if (profileIndex > -1) {
     promises.push(service.papiClient.profiles.iter().toArray());
-    callbaks.push(ReferenceType.toString(ReferenceType.Profile));
+    callbaks.push("profile");
   }
   if (fileIndex > -1) {
     promises.push(
@@ -1261,18 +1270,9 @@ async function GetReferencesData(
         fields: ["InternalID", "Title", "URL"],
       })
     );
-    callbaks.push(ReferenceType.toString(ReferenceType.FileStorage));
+    callbaks.push("file_storage");
   }
 
-  if (transactionTypeDefinitionIndex > -1) {
-    promises.push(
-      service.papiClient.types.find({
-        fields: ["InternalID", "Name"],
-        where: "Type=2",
-      })
-    );
-    callbaks.push(ReferenceType.toString(ReferenceType.TransactionType));
-  }
   if (activityTypeIndex > -1) {
     promises.push(
       service.papiClient.types.find({
@@ -1280,22 +1280,13 @@ async function GetReferencesData(
         where: "Type=99",
       })
     );
-    callbaks.push(ReferenceType.toString(ReferenceType.ActivityType));
-  }
-  if (accountTypeDefinitionIndex > -1) {
-    promises.push(
-      service.papiClient.types.find({
-        fields: ["InternalID", "Name"],
-        where: "Type=35",
-      })
-    );
-    callbaks.push(ReferenceType.toString(ReferenceType.AccountType));
+    callbaks.push("type_definition");
   }
   if (catalogIndex > -1) {
     promises.push(
       service.papiClient.get("/Catalogs?fields=InternalID,ExternalID")
     );
-    callbaks.push("Catalog");
+    callbaks.push("catalog");
   }
   if (filterIndex > -1) {
     promises.push(
@@ -1303,13 +1294,13 @@ async function GetReferencesData(
         `/meta_data/lists/all_activities?where=Name='Transaction Item Scope'`
       )
     );
-    callbaks.push(ReferenceType.toString(ReferenceType.Filter));
+    callbaks.push("filter");
   }
   if (udtIndex > -1) {
     promises.push(
       service.papiClient.metaData.userDefinedTables.iter().toArray()
     );
-    callbaks.push(ReferenceType.toString(ReferenceType.UserDefinedTable));
+    callbaks.push("user_defined_table");
   }
   await Promise.all(promises).then((res) => {
     for (let i = 0; i < callbaks.length; i++) {

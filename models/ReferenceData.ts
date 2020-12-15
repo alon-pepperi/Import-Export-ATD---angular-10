@@ -7,13 +7,11 @@ import {
 } from "@pepperi-addons/papi-sdk";
 
 export interface ReferenceData {
-  Filter: [];
-  UserDefinedTable: UserDefinedTableMetaData[];
-  FileStorage: FileStorage[];
-  AccountType: Type[];
-  TransactionType: Type[];
-  ActivityType: Type[];
-  Profile: [];
-  Catalog: [];
-  List: [];
+  filter: [];
+  user_defined_table: UserDefinedTableMetaData[];
+  file_storage: FileStorage[];
+  type_definition: Type[];
+  profile: [];
+  catalog: [];
+  list: [];
 }

@@ -28,8 +28,8 @@
                     rowSpan="2"
                     mat-button
                     pepButtonLoader
+                    [finish]="isCallbackExportFinish"
                     [ignoreDisabledStyle]="true"
-                    [loaderTime]="9000"
                     (click)="exportAtd()"
                     class="spacing-element pep-button md strong ellipsis pull-right flip"
                 >
