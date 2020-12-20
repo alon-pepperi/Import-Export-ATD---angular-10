@@ -28,6 +28,7 @@
                     rowSpan="2"
                     mat-button
                     pepButtonLoader
+                    [disabled]="disableExportButton"
                     [finish]="isCallbackExportFinish"
                     [ignoreDisabledStyle]="true"
                     (click)="exportAtd()"

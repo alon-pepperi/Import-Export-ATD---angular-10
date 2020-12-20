@@ -41,10 +41,12 @@
                         </pep-attachment>
 
                         <button
+                            (click)="importAtd()"
                             pepButtonLoader
+                            [disabled]="disableImportButton"
                             [ignoreDisabledStyle]="true"
                             [finish]="isCallbackImportFinish"
-                            (click)="importAtd()"
+                            mat-button
                             class="spacing-element pep-button md strong ellipsis pull-right flip"
                         >
                             {{ "Import_Button" | translate }}
@@ -83,6 +85,7 @@
                         (click)="onCancelClicked()"
                         rowSpan="2"
                         mat-button
+                        [disabled]="disableCancelConflictButton"
                         class="spacing-element pep-button md weak ellipsis"
                     >
                         {{ "Cancel" | translate }}
@@ -126,6 +129,7 @@
                         (click)="onCancelClicked()"
                         rowSpan="2"
                         mat-button
+                        [disabled]="disableCancelWebhooksButton"
                         class="spacing-element pep-button md weak ellipsis"
                     >
                         {{ "Cancel" | translate }}

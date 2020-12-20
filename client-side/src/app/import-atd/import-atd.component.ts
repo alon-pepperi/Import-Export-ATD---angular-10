@@ -54,6 +54,9 @@ export class ImportAtdComponent implements OnInit {
     showConflictResolution: boolean = false;
     showWebhooksResolution: boolean = false;
     disableConflictButton: boolean = false;
+    disableImportButton: boolean = true;
+    disableCancelConflictButton: boolean = false;
+    disableCancelWebhooksButton: boolean = false;
     value = "";
     viewType: PepListViewType = "table";
     colorType: PepColorType = "any";
@@ -96,6 +99,7 @@ export class ImportAtdComponent implements OnInit {
     ngOnInit() {}
 
     async onOkConflictsClicked() {
+        this.disableCancelConflictButton = true;
         this.isCallbackConflictsFinish = false;
         if (this.webhooks.length > 0) {
             this.showWebhooks();
@@ -281,6 +285,7 @@ export class ImportAtdComponent implements OnInit {
     }
 
     async onOkWebhooksClicked() {
+        this.disableCancelWebhooksButton = true;
         this.isCallbackWebhokksFinish = false;
         debugger;
         let dynamoWebhooks = {};
@@ -355,6 +360,9 @@ export class ImportAtdComponent implements OnInit {
                     }
                     if (!this.isCallbackConflictsFinish) {
                         this.isCallbackConflictsFinish = true;
+                    }
+                    if (!this.isCallbackImportFinish) {
+                        this.isCallbackImportFinish = true;
                     }
                     if (res == "success") {
                         const title = this.translate.instant(
@@ -447,23 +455,29 @@ export class ImportAtdComponent implements OnInit {
                         if (
                             typeDefinition.Type === ObjectType.activities &&
                             exportedAtdType === ObjectType.transactions
-                        )
+                        ) {
+                            this.isCallbackImportFinish = true;
+
                             this.appService.openDialog(
                                 this.translate.instant("Import_Export_Error"),
                                 this.translate.instant(
                                     "Transaction_Cannot_Imported_To_Activity"
                                 )
                             );
-                        else if (
+                        } else if (
                             typeDefinition.Type === ObjectType.transactions &&
                             exportedAtdType === ObjectType.activities
-                        )
+                        ) {
+                            this.isCallbackImportFinish = true;
+
                             this.appService.openDialog(
                                 this.translate.instant("Import_Export_Error"),
                                 this.translate.instant(
                                     "Activity_Cannot_Imported_To_Transaction"
                                 )
                             );
+                        }
+
                         return;
                     }
                     this.getTypeString(typeDefinition);
@@ -580,6 +594,7 @@ export class ImportAtdComponent implements OnInit {
             );
         }
         if (unresolvedConflicts.length > 0) {
+            this.isCallbackImportFinish = true;
             let content = "";
             unresolvedConflicts.forEach((c) => {
                 if (c.Type === "type_definition") {
@@ -653,7 +668,7 @@ export class ImportAtdComponent implements OnInit {
                                 Name: referencedPair.Destination.Name,
                                 Object: referencedPair.Destination.Type,
                                 Status: "ExistsWithDifferentContent",
-                                Resolution: null,
+                                Resolution: "UseExisting",
                                 UUID: Guid.newGuid(),
                                 ID: referencedPair.Destination.ID,
                                 // this.resolutionOptions,
@@ -683,6 +698,7 @@ export class ImportAtdComponent implements OnInit {
             return "ActivityType";
         }
     }
+
     async compareFileContentOfOriginAndDest(
         origin: Reference,
         destinition: Reference
@@ -703,6 +719,9 @@ export class ImportAtdComponent implements OnInit {
             var fileReader = new FileReader();
             fileReader.readAsDataURL(blob);
             fileReader.onload = (e) => {
+                if (this.selectedActivity) {
+                    this.disableImportButton = false;
+                }
                 this.importedService.exportedAtdstring = atob(
                     file.fileStr.split(";")[1].split(",")[1]
                 );
@@ -710,6 +729,8 @@ export class ImportAtdComponent implements OnInit {
                     this.importedService.exportedAtdstring
                 );
             };
+        } else {
+            this.disableImportButton = true;
         }
     }
 
@@ -738,6 +759,11 @@ export class ImportAtdComponent implements OnInit {
 
     elementClicked(event) {
         this.selectedActivity = event.value;
+        if (event.value === "") {
+            this.disableImportButton = true;
+        } else if (this.importedService.exportedAtdstring) {
+            this.disableImportButton = false;
+        }
     }
 
     notifyValueChanged(event) {
@@ -761,9 +787,14 @@ export class ImportAtdComponent implements OnInit {
     }
 
     private validateConflictButtonEnabled() {
+        console.log(`in validateConflictButtonEnabled, this.conflictsList: 
+        ${JSON.stringify(this.conflictsList)}`);
         if (
             this.conflictsList.filter(
-                (x) => x.Resolution === this.translate.instant("LIST.NONE")
+                (x) =>
+                    x.Resolution !== "OverwriteExisting" &&
+                    x.Resolution !== "UseExisting" &&
+                    x.Resolution !== "CreateNew"
             ).length > 0
         ) {
             this.disableConflictButton = true;
@@ -853,8 +884,10 @@ export class ImportAtdComponent implements OnInit {
             case "Object":
                 dataRowField.ColumnWidth = 20;
 
+                let keyName = this.getKeyStringFromObjectName(conflict);
+
                 dataRowField.FormattedValue = dataRowField.Value = this.translate.instant(
-                    conflict[key]
+                    keyName
                 );
 
                 break;
@@ -883,15 +916,11 @@ export class ImportAtdComponent implements OnInit {
                         conflict.Resolution
                     );
                 }
-                if (!conflict.Resolution) {
-                    dataRowField.FormattedValue = dataRowField.Value = this.translate.instant(
-                        "UseExisting"
-                    );
-                }
+
                 dataRowField.OptionalValues = [
                     {
                         Key: "UseExisting",
-                        Value: this.translate.instant("UseExisting"),
+                        Value: "Use Existing", //this.translate.instant("UseExisting"),
                     },
                     {
                         Key: "OverwriteExisting",
@@ -907,6 +936,16 @@ export class ImportAtdComponent implements OnInit {
                 break;
         }
         return dataRowField;
+    }
+
+    private getKeyStringFromObjectName(conflict: Conflict) {
+        let keyName;
+        if (conflict.Object === "file_storage") {
+            keyName = "FileStorage";
+        } else if (conflict.Object === "user_defined_table") {
+            keyName = "UserDefinedTable";
+        }
+        return keyName;
     }
 
     private getStatusValue(conflict: Conflict) {

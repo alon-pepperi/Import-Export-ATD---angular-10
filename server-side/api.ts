@@ -297,7 +297,6 @@ async function addFieldsReferences(
             (x) =>
               x.ExternalID == field.TypeSpecificFields.ReferenceTo.ExternalID
           );
-          // to remove
           if (index > -1) {
             const reference: Reference = {
               ID: String(res[index].InternalID),
@@ -449,7 +448,7 @@ export async function import_type_definition(client: Client, request: Request) {
 }
 
 async function callImportOfAddons(service: MyService, addons: AddonOwner[]) {
-  addons.forEach((addon) => {
+  addons?.forEach((addon) => {
     service.papiClient.addons.installedAddons
       .addonUUID(addon.UUID)
       .install()
@@ -534,15 +533,14 @@ async function upsertATD(
   const atdToInsert = {
     ExternalID: `${data.ExternalID} (${+new Date()})`,
     Description: `${data.ExternalID} (${+new Date()})`,
-    Icon: "icon1",
   };
   const atd = await service.papiClient.post(
-    `meta_data/${type}/types`,
+    `/meta_data/${type}/types`,
     atdToInsert
   );
   atdToInsert.ExternalID = atdToInsert.Description = `${data.ExternalID} (${atd.InternalID})`;
   atdToInsert["InternalID"] = atd.InternalID;
-  await service.papiClient.post(`meta_data/${type}/types`, atdToInsert);
+  await service.papiClient.post(`/meta_data/${type}/types`, atdToInsert);
   return atd.InternalID;
 }
 
@@ -688,20 +686,10 @@ async function upsertHiddenFields(
   subtype: string,
   fieldsToDelete: ApiFieldObject[]
 ) {
-  try {
-    await service.papiClient.post(
-      `/meta_data/bulk/${type}/types/${subtype}/fields`,
-      fieldsToDelete
-    );
-  } catch (err) {
-    console.error(
-      `update existing fields to hidden failed. error: ${err}, the body: ${JSON.stringify(
-        fieldsToDelete
-      )}`
-    );
-
-    return false;
-  }
+  await service.papiClient.post(
+    `/meta_data/bulk/${type}/types/${subtype}/fields`,
+    fieldsToDelete
+  );
 }
 
 async function fixSettingsReferences(
@@ -948,7 +936,9 @@ function findIDAndReplaceKeyValueWorkflow(
   const pairIndex = map.Mapping.findIndex(
     (x) => x.Origin.ID === String(action.KeyValue[key])
   );
-  action.KeyValue[key] = map.Mapping[pairIndex].Destination.ID;
+  if (pairIndex > -1) {
+    action.KeyValue[key] = map.Mapping[pairIndex].Destination.ID;
+  }
 }
 
 function replaceListUUID(action: any, map: References, key: string) {
@@ -1215,7 +1205,7 @@ async function GetReferencesData(
   const fileIndex = exportReferences.findIndex(
     (ref) => ref.Type === "file_storage"
   );
-  const activityTypeIndex = exportReferences.findIndex(
+  const typeDefinitionIndex = exportReferences.findIndex(
     (ref) => ref.Type === "type_definition"
   );
 
@@ -1273,11 +1263,10 @@ async function GetReferencesData(
     callbaks.push("file_storage");
   }
 
-  if (activityTypeIndex > -1) {
+  if (typeDefinitionIndex > -1) {
     promises.push(
       service.papiClient.types.find({
         fields: ["InternalID", "Name"],
-        where: "Type=99",
       })
     );
     callbaks.push("type_definition");

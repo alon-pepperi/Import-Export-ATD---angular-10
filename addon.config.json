@@ -1,11 +1,16 @@
 {
   "AddonUUID": "e9029d7f-af32-4b0e-a513-8d9ced6f8186",
-  "AddonVersion": "1.1.109",
+  "AddonVersion": "1.1.119",
   "DebugPort": 4400,
   "WebappBaseUrl": "https://app.sandbox.pepperi.com",
   "DefaultEditor": "main",
-  "Endpoints": ["installation.ts", "api.ts"],
-  "Editors": ["main"],
+  "Endpoints": [
+    "installation.ts",
+    "api.ts"
+  ],
+  "Editors": [
+    "main"
+  ],
   "Assets": [
     "de.json",
     "en.json",

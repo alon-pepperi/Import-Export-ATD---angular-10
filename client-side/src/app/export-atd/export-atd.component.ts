@@ -35,6 +35,7 @@ import { AppService } from "../app.service";
 export class ExportAtdComponent implements OnInit {
     data: any;
     isCallbackExportFinish = false;
+    disableExportButton: boolean = true;
     activityTypes: KeyValuePair<string>[];
     selectedActivity: any;
     title = "pepperi web app test";
@@ -70,6 +71,11 @@ export class ExportAtdComponent implements OnInit {
 
     elementClicked(event) {
         this.selectedActivity = event.value;
+        if (event.value === "") {
+            this.disableExportButton = true;
+        } else {
+            this.disableExportButton = false;
+        }
     }
 
     exportAtd() {
