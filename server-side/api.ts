@@ -27,6 +27,8 @@ export async function export_type_definition(client: Client, request: Request) {
   const params = request.query;
   const type = params.type;
   const subtypeid = params.subtype;
+  console.log(`start export ATD: ${subtypeid}`);
+
   const url = await doExport(type, subtypeid, service);
   return url;
 }
@@ -100,7 +102,6 @@ async function doExport(
   }
 
   await Promise.all(getDataPromises).then(async (dataOfATDObjects) => {
-    console.log(`result1: ${dataOfATDObjects}`);
     atdMetaData = dataOfATDObjects[0] as ATDMetaData;
     dataViews = dataOfATDObjects[1] as DataView[];
     workflow = dataOfATDObjects[2];
@@ -137,11 +138,12 @@ async function doExport(
     }
 
     addonsRederences.forEach((addon) => {
-      getReferencesPromises.push(addExportOfAddonResult(addon, service, addon));
+      if (addon)
+        getReferencesPromises.push(
+          addExportOfAddonResult(addon, service, addon)
+        );
     });
-    await Promise.all(getReferencesPromises).then(async (result2) => {
-      console.log(`result2: ${result2}`);
-
+    await Promise.all(getReferencesPromises).then(async (result) => {
       atd = {
         UUID: atdMetaData["UUID"],
         InternaID: String(atdMetaData.InternalID),
@@ -477,19 +479,27 @@ async function doImport(
       }
     });
 
-  const fixReferencesPromises: Promise<boolean>[] = []; /// array of promises.
+  upsertPreparation(atd, subtypeid);
 
-  if (map !== null && map != undefined) {
+  const fixReferencesPromises: Promise<boolean>[] = [];
+
+  if (map) {
     fixReferencesPromises.push(
       fixProfilesOfDataViews(Number(subtypeid), atd.DataViews, map)
     );
     fixReferencesPromises.push(fixReferencesOfFields(service, atd.Fields, map));
     fixReferencesPromises.push(fixWorkflowReferences(atd.Workflow, map));
 
-    if (type === `transactions` && atd.Settings) {
-      fixReferencesPromises.push(
-        fixSettingsReferences(service, atd.Settings, map)
-      );
+    if (type === ObjectType.toString(ObjectType.transactions)) {
+      if (atd.Settings)
+        fixReferencesPromises.push(
+          fixSettingsReferences(service, atd.Settings, map)
+        );
+
+      if (atd.LineFields)
+        fixReferencesPromises.push(
+          fixReferencesOfFields(service, atd.LineFields, map)
+        );
     }
   }
 
@@ -501,7 +511,7 @@ async function doImport(
         Promise<boolean>,
         Promise<boolean>
       ] = [
-        upsertDataViews(service, atd.DataViews),
+        upsertDataViews(service, atd.DataViews, type, subtypeid),
         upsertFields(service, atd.Fields, type, subtypeid),
         upsertWorkflow(service, atd.Workflow, type, subtypeid),
       ];
@@ -517,12 +527,27 @@ async function doImport(
       }
 
       await Promise.all(upsertDataPromises).then((upsertDataResults) => {
-        console.log(`result2: ${upsertDataResults}`);
         succeeded = upsertDataResults.every((elem) => elem === true);
       });
     }
   );
   return succeeded;
+}
+
+function upsertPreparation(atd: ActivityTypeDefinition, subtypeid: string) {
+  atd.DataViews.forEach((dataView) => {
+    if (dataView.Context?.Object?.InternalID) {
+      dataView.Context.Object.InternalID = Number(subtypeid);
+    }
+    delete dataView.InternalID;
+  });
+
+  atd.Fields.forEach((field) => {
+    delete field.InternalID;
+  });
+  atd.LineFields?.forEach((field) => {
+    delete field.InternalID;
+  });
 }
 
 async function upsertATD(
@@ -594,14 +619,35 @@ async function upsertWorkflow(
 
 async function upsertDataViews(
   service: MyService,
-  dataViews: DataView[]
+  dataViews: DataView[],
+  type: string,
+  subtype: string
 ): Promise<boolean> {
   const body = { hack: dataViews };
   try {
-    //fs.writeFile(,'test', JSON.stringify({ hack: dataViews }));
-    //fs.writeFileSync('test.Json', JSON.stringify({ hack: dataViews }));
-    console.debug(`posting data views: ${JSON.stringify({ hack: dataViews })}`);
-    dataViews.forEach((dataView) => delete dataView.InternalID);
+    let currentDataViews = await service.papiClient.metaData.dataViews.find({
+      where: `Context.Object.Resource='${type}' and Context.Object.InternalID=${subtype}`,
+    });
+
+    // delete data view if the combination of Context.Name & Context.ScreenSize & Context.Profile.Name not exist in t
+    let dataViewsToDelete: DataView[] = [];
+    for (let currentDataView of currentDataViews) {
+      let index = dataViews.findIndex(
+        (x) =>
+          x.Context?.Name === currentDataView.Context?.Name &&
+          x.Context?.ScreenSize === currentDataView.Context?.ScreenSize &&
+          x.Context?.Profile.Name === currentDataView.Context?.Profile.Name
+      );
+
+      if (index == -1) {
+        dataViewsToDelete.push(currentDataView);
+      }
+    }
+    dataViewsToDelete.forEach((dv) => (dv.Hidden = true));
+
+    await service.papiClient.post("/meta_data/data_views_batch", {
+      hack: dataViewsToDelete,
+    });
     await service.papiClient.post("/meta_data/data_views_batch", body);
     console.log(`upsert data views succeeded`);
     return true;
@@ -611,15 +657,6 @@ async function upsertDataViews(
     );
     return false;
   }
-  // dataViews.forEach(async (dataview) => {
-  //     try {
-  //         await service.papiClient.post('/meta_data/data_views', dataview);
-  //         console.log(`post data_view: ${dataview.InternalID} succeeded`);
-  //     } catch (err) {
-  //         console.log(`post data_view: ${dataview.InternalID} failed`, `body:${JSON.stringify(dataview)}`);
-  //         console.error(`Error: ${err}`);
-  //     }
-  // });
 }
 
 async function upsertFields(
@@ -632,7 +669,7 @@ async function upsertFields(
     fields = fields.filter(
       (item) => item.FieldID.startsWith("TSA") || item.FieldID.startsWith("PSA")
     );
-    fields.forEach((f) => delete f.InternalID);
+
     let currentFields = await service.papiClient.metaData
       .type(type)
       .types.subtype(subtype)
@@ -782,27 +819,35 @@ async function fixReferencesOfFields(
             const pairIndex = map.Mapping.findIndex(
               (x) => x.Origin.UUID === String(referenceUUID)
             );
-            field.TypeSpecificFields.ReferenceTo.ExternalID =
-              map.Mapping[pairIndex].Destination.Name;
-            field.TypeSpecificFields.ReferenceTo.UUID =
-              map.Mapping[pairIndex].Destination.UUID;
+            if (pairIndex > -1) {
+              field.TypeSpecificFields.ReferenceTo.ExternalID =
+                map.Mapping[pairIndex].Destination.Name;
+              field.TypeSpecificFields.ReferenceTo.UUID =
+                map.Mapping[pairIndex].Destination.UUID;
+            }
           }
         }
       }
-      if (field.UserDefinedTableSource != null) {
-        const pairIndex = map.Mapping.findIndex(
-          (x) => x.Origin.ID === field.UserDefinedTableSource.TableID
-        );
-        // if (map.Pairs[pairIndex].destinition === null) {
-        //     const upsertUdt: UserDefinedTableMetaData = await service.papiClient.metaData.userDefinedTables.upsert(
-        //         JSON.parse(String(map.Pairs[pairIndex].origin.Content)),
-        //     );
-        //     field.UserDefinedTableSource.TableID = upsertUdt.TableID;
-        //     field.UserDefinedTableSource.MainKey.TableID = upsertUdt.MainKeyType.Name;
-        //     field.UserDefinedTableSource.SecondaryKey.TableID = upsertUdt.SecondaryKeyType.Name;
-        // }
-        //field.UserDefinedTableSource.TableID = map.Pairs[pairIndex].destinition.
-      }
+      //I do not need to fixed the fields that point to UDT because name of sandbox is the same in production
+
+      //   if (field.UserDefinedTableSource != null) {
+      //     const pairIndex = map.Mapping.findIndex(
+      //       (x) => x.Origin.ID === field.UserDefinedTableSource.TableID
+      //     );
+      //     if (pairIndex > -1) {
+      //       field.UserDefinedTableSource.TableID =
+      //         map.Mapping[pairIndex].Destination.ID;
+      //     }
+      //     if (map.Pairs[pairIndex].destinition === null) {
+      //         const upsertUdt: UserDefinedTableMetaData = await service.papiClient.metaData.userDefinedTables.upsert(
+      //             JSON.parse(String(map.Pairs[pairIndex].origin.Content)),
+      //         );
+      //         field.UserDefinedTableSource.TableID = upsertUdt.TableID;
+      //         field.UserDefinedTableSource.MainKey.TableID = upsertUdt.MainKeyType.Name;
+      //         field.UserDefinedTableSource.SecondaryKey.TableID = upsertUdt.SecondaryKeyType.Name;
+      //     }
+      //     field.UserDefinedTableSource.TableID = map.Pairs[pairIndex].destinition.
+      //   }
     }
   }
 }
@@ -821,7 +866,6 @@ async function fixWorkflowReferences(
       "SECRET_KEY",
       "WEBHOOK_URL",
     ];
-    console.log(`workflow: ${JSON.stringify(workflow)}`);
     getReferecesObjects(
       workflow.WorkflowObject.WorkflowTransitions,
       workflow,
@@ -906,10 +950,6 @@ async function fixProfilesOfDataViews(
 ): Promise<boolean> {
   try {
     dataViews.forEach((dataview) => {
-      if (dataview.Context?.Object?.InternalID) {
-        dataview.Context.Object.InternalID = Number(subtypeid);
-      }
-      delete dataview.InternalID;
       const profileID = dataview.Context?.Profile.InternalID;
       const pairIndex = map.Mapping.findIndex(
         (x) => x.Origin.ID === String(profileID)
@@ -1162,7 +1202,6 @@ function addReferencesPair(
   ref: Reference,
   referencesMap: References
 ) {
-  console.log("at addReferencesPair");
   const destinitionRef = {} as Reference;
 
   if (element.InternalID !== undefined) {
