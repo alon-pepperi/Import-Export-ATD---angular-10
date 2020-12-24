@@ -17,16 +17,16 @@ import { Webhook } from "./../../../../models/Webhook";
 import { ResolutionOptionType } from "../../../../models/ResolutionOption";
 import { pairs } from "rxjs";
 import {
-    AddonService,
-    CustomizationService,
-    DataConvertorService,
+    PepAddonService,
+    PepCustomizationService,
+    PepDataConvertorService,
     FIELD_TYPE,
-    HttpService,
+    PepHttpService,
     KeyValuePair,
     ObjectSingleData,
     PepFieldData,
     PepRowData,
-    UtilitiesService,
+    PepUtilitiesService,
     X_ALIGNMENT_TYPE,
 } from "@pepperi-addons/ngx-lib";
 import {
@@ -73,13 +73,13 @@ export class ImportAtdComponent implements OnInit {
     @ViewChild("webhookslist") customWebhookList: PepListComponent;
 
     constructor(
-        private dataConvertorService: DataConvertorService,
-        private utilitiesService: UtilitiesService,
+        private dataConvertorService: PepDataConvertorService,
+        private utilitiesService: PepUtilitiesService,
         private appService: AppService,
         private translate: TranslateService,
-        private customizationService: CustomizationService,
-        private httpService: HttpService,
-        private addonService: AddonService,
+        private customizationService: PepCustomizationService,
+        private httpService: PepHttpService,
+        private addonService: PepAddonService,
         private importedService: ImportAtdService
     ) {
         this.getActivityTypes();

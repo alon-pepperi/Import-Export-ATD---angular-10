@@ -304,7 +304,7 @@ async function addFieldsReferences(
               ID: String(res[index].InternalID),
               Name: res[index].ExternalID,
               Type: "type_definition",
-              SubType: getTypeFromId(referenceId),
+              SubType: ObjectType.toString(referenceId),
               UUID: field.TypeSpecificFields.ReferenceTo.UUID,
             };
             const isExist = references.findIndex((x) => x.ID == reference.ID);
@@ -335,20 +335,6 @@ async function addFieldsReferences(
         }
       }
     }
-  }
-}
-
-function getTypeFromId(type) {
-  switch (type) {
-    case 35:
-      return "AccountType";
-    case 2:
-      return "TransactionType";
-    case 99:
-      return "ActivityType";
-
-    default:
-      return "None";
   }
 }
 

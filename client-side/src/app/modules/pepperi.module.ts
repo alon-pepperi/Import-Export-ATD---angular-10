@@ -8,9 +8,9 @@ import {
 } from "@pepperi-addons/ngx-lib/icon";
 import {
     PepNgxLibModule,
-    AddonService,
-    CustomizationService,
-    FileService,
+    PepAddonService,
+    PepCustomizationService,
+    PepFileService,
 } from "@pepperi-addons/ngx-lib";
 import { PepAttachmentModule } from "@pepperi-addons/ngx-lib/attachment";
 import { PepCheckboxModule } from "@pepperi-addons/ngx-lib/checkbox";
@@ -42,8 +42,8 @@ import { MultiTranslateHttpLoader } from "ngx-translate-multi-http-loader";
 
 export function createTranslateLoader(
     http: HttpClient,
-    fileService: FileService,
-    addonService: AddonService
+    fileService: PepFileService,
+    addonService: PepAddonService
 ) {
     let addonStaticFolder = addonService.getAddonStaticFolder();
     addonStaticFolder =
@@ -105,7 +105,7 @@ const pepperiComponentsModules = [
             loader: {
                 provide: TranslateLoader,
                 useFactory: createTranslateLoader,
-                deps: [HttpClient, FileService, AddonService],
+                deps: [HttpClient, PepFileService, PepAddonService],
             },
         }),
     ],

@@ -30,8 +30,9 @@
                     pepButtonLoader
                     [disabled]="disableExportButton"
                     [finish]="isCallbackExportFinish"
-                    [ignoreDisabledStyle]="true"
+                    [ignoreDisabledStyle]="false"
                     (click)="exportAtd()"
+                    [ngClass]="{ disabled: disableExportButton }"
                     class="spacing-element pep-button md strong ellipsis pull-right flip"
                 >
                     {{ "Export_Button" | translate }}

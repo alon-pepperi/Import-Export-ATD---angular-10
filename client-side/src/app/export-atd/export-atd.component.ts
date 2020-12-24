@@ -3,23 +3,23 @@ import { TranslateService } from "@ngx-translate/core";
 import { ObjectType } from "./../../../../models/ObjectType.enum";
 
 import {
-    CustomizationService,
-    HttpService,
+    PepCustomizationService,
+    PepHttpService,
     ObjectSingleData,
-    DataConvertorService,
+    PepDataConvertorService,
     PepRowData,
     PepFieldData,
-    AddonService,
+    PepAddonService,
     FIELD_TYPE,
-    UtilitiesService,
+    PepUtilitiesService,
     KeyValuePair,
-    SessionService,
+    PepSessionService,
 } from "@pepperi-addons/ngx-lib";
 import { PepColorType } from "@pepperi-addons/ngx-lib/color";
 
 import {
     PepListComponent,
-    ChangeSortingEvent,
+    IPepListSortingChangeEvent,
     PepListViewType,
 } from "@pepperi-addons/ngx-lib/list";
 
@@ -46,14 +46,14 @@ export class ExportAtdComponent implements OnInit {
 
     constructor(
         private translate: TranslateService,
-        private customizationService: CustomizationService,
+        private customizationService: PepCustomizationService,
         private appService: AppService,
-        private utilitiesService: UtilitiesService,
-        private dataConvertorService: DataConvertorService,
-        private httpService: HttpService,
-        private addonService: AddonService,
+        private utilitiesService: PepUtilitiesService,
+        private dataConvertorService: PepDataConvertorService,
+        private httpService: PepHttpService,
+        private addonService: PepAddonService,
         private exportatdService: ExportAtdService,
-        private sessionService: SessionService
+        private sessionService: PepSessionService
     ) {
         this.getActivityTypes();
     }

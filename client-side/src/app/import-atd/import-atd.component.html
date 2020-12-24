@@ -44,9 +44,9 @@
                             (click)="importAtd()"
                             pepButtonLoader
                             [disabled]="disableImportButton"
-                            [ignoreDisabledStyle]="true"
+                            [ignoreDisabledStyle]="false"
                             [finish]="isCallbackImportFinish"
-                            mat-button
+                            [ngClass]="{ disabled: disableImportButton }"
                             class="spacing-element pep-button md strong ellipsis pull-right flip"
                         >
                             {{ "Import_Button" | translate }}
@@ -94,7 +94,8 @@
                         (click)="onOkConflictsClicked()"
                         pepButtonLoader
                         [disabled]="disableConflictButton"
-                        [ignoreDisabledStyle]="true"
+                        [ignoreDisabledStyle]="false"
+                        [ngClass]="{ disabled: disableConflictButton }"
                         [finish]="isCallbackConflictsFinish"
                         mat-button
                         class="spacing-element pep-button md strong ellipsis"
@@ -138,7 +139,8 @@
                         (click)="onOkWebhooksClicked()"
                         pepButtonLoader
                         [disabled]="disableConflictButton"
-                        [ignoreDisabledStyle]="true"
+                        [ignoreDisabledStyle]="false"
+                        [ngClass]="{ disabled: disableConflictButton }"
                         [finish]="isCallbackWebhokksFinish"
                         mat-button
                         class="spacing-element pep-button md strong ellipsis"

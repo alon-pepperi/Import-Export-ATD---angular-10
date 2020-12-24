@@ -1,11 +1,11 @@
 import { Injectable } from "@angular/core";
 //@ts-ignore
-import { AddonService } from "pepperi-addon-service";
+import { PepAddonService } from "pepperi-addon-service";
 // @ts-ignore
 import { ActivityTypeDefinition } from "./../../../../models/activityTypeDefinition";
 import { PapiClient } from "@pepperi-addons/papi-sdk";
 import jwt from "jwt-decode";
-import { HttpService, KeyValuePair } from "@pepperi-addons/ngx-lib";
+import { PepHttpService, KeyValuePair } from "@pepperi-addons/ngx-lib";
 import { AppService } from "../app.service";
 
 @Injectable({
@@ -24,7 +24,7 @@ export class ImportAtdService {
 
     constructor(
         private appService: AppService,
-        private httpService: HttpService
+        private httpService: PepHttpService
     ) {}
 
     //   callToAddonApi(
