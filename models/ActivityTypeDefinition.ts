@@ -16,7 +16,7 @@ export interface ActivityTypeDefinition {
   ModificationDateTime: string;
   Hidden: boolean;
   Addons: AddonOwner[];
-  Settings?: ATDSettings;
+  Settings: ATDSettings;
   Fields: ApiFieldObject[];
   LineFields?: ApiFieldObject[];
   DataViews: DataView[];

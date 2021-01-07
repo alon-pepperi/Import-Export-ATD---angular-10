@@ -36,6 +36,7 @@ import {
 
 import { PepColorType } from "@pepperi-addons/ngx-lib/color";
 import { AppService } from "../app.service";
+import { rejects } from "assert";
 
 @Component({
     selector: "app-import-atd",
@@ -217,6 +218,7 @@ export class ImportAtdComponent implements OnInit {
             this.referenceMap.Mapping[referenceIndex].Origin.Content
         );
         delete udt.InternalID;
+        udt.Hidden = false;
         let res = await this.importedService.callToPapi(
             "POST",
             "\\meta_data\\user_defined_tables",
@@ -262,6 +264,7 @@ export class ImportAtdComponent implements OnInit {
             FileName: this.referenceMap.Mapping[referenceIndex].Origin.Name,
             URL: this.referenceMap.Mapping[referenceIndex].Origin.Path,
             Title: this.referenceMap.Mapping[referenceIndex].Origin.Name,
+            Hidden: false,
             Configuration: {
                 ObjectType: "Order",
                 Type: "CustomClientForm",
@@ -353,41 +356,34 @@ export class ImportAtdComponent implements OnInit {
                 { type: this.typeString, subtype: this.selectedActivity },
                 { URL: url, References: this.referenceMap }
             )
-            .then(
-                (res: any) => {
-                    if (!this.isCallbackWebhokksFinish) {
-                        this.isCallbackWebhokksFinish = true;
-                    }
-                    if (!this.isCallbackConflictsFinish) {
-                        this.isCallbackConflictsFinish = true;
-                    }
-                    if (!this.isCallbackImportFinish) {
-                        this.isCallbackImportFinish = true;
-                    }
-                    if (res == "success") {
-                        const title = this.translate.instant(
-                            "Import_Export_Success"
-                        );
-                        const content = this.translate.instant(
-                            "Import_Finished_Succefully"
-                        );
-                        this.appService.openDialog(title, content, () => {
-                            window.location.reload();
-                        });
-                    } else {
-                        const title = this.translate.instant(
-                            "Import_Export_Error"
-                        );
-                        const content = this.translate.instant(
-                            "Error_While_Importing"
-                        );
-                        this.appService.openDialog(title, content);
-                    }
-                    //window.clearInterval();
-                    this.data = res;
-                },
-                (error) => {}
-            );
+            .then((res: any) => {
+                if (!this.isCallbackWebhokksFinish) {
+                    this.isCallbackWebhokksFinish = true;
+                }
+                if (!this.isCallbackConflictsFinish) {
+                    this.isCallbackConflictsFinish = true;
+                }
+                if (!this.isCallbackImportFinish) {
+                    this.isCallbackImportFinish = true;
+                }
+
+                const title = this.translate.instant("Import_Export_Success");
+                const content = this.translate.instant(
+                    "Import_Finished_Succefully"
+                );
+                this.appService.openDialog(title, content, () => {
+                    window.location.reload();
+                });
+
+                //window.clearInterval();
+                this.data = res;
+            })
+            .catch((res: any) => {
+                const title = this.translate.instant("Import_Export_Error");
+                const content = this.translate.instant("Error_While_Importing");
+                this.appService.openDialog(title, content);
+                console.log("error");
+            });
     }
 
     private deleteContentFromMap() {
@@ -722,9 +718,12 @@ export class ImportAtdComponent implements OnInit {
                 if (this.selectedActivity) {
                     this.disableImportButton = false;
                 }
-                this.importedService.exportedAtdstring = atob(
-                    file.fileStr.split(";")[1].split(",")[1]
+                this.importedService.exportedAtdstring = decodeURIComponent(
+                    escape(
+                        window.atob(file.fileStr.split(";")[1].split(",")[1])
+                    )
                 );
+
                 this.importedService.exportedAtd = JSON.parse(
                     this.importedService.exportedAtdstring
                 );
@@ -736,8 +735,8 @@ export class ImportAtdComponent implements OnInit {
 
     async fileToBase64(filename, filepath) {
         const responseText = await fetch(filepath).then((r) => r.text());
-
-        return btoa(responseText);
+        return btoa(unescape(encodeURIComponent(responseText)));
+        //return btoa(responseText);
     }
 
     uploadFile(event) {
@@ -770,18 +769,18 @@ export class ImportAtdComponent implements OnInit {
         debugger;
         if (this.showConflictResolution) {
             let objectOndex = this.conflictsList.findIndex(
-                (x) => x.UUID === event.Id
+                (x) => x.UUID === event.id
             );
-            this.conflictsList[objectOndex].Resolution = event.Value;
+            this.conflictsList[objectOndex].Resolution = event.value;
             this.validateConflictButtonEnabled();
         } else if (this.showWebhooksResolution) {
             let objectOndex = this.webhooks.findIndex(
-                (x) => x.UUID === event.Id
+                (x) => x.UUID === event.id
             );
-            if (event.ApiName === "Object_WebhookSecretKeyColumn") {
-                this.webhooks[objectOndex].SecretKey = event.Value;
-            } else if (event.ApiName === "Object_WebhookUrlColumn") {
-                this.webhooks[objectOndex].Url = event.Value;
+            if (event.key === "Object_WebhookSecretKeyColumn") {
+                this.webhooks[objectOndex].SecretKey = event.value;
+            } else if (event.key === "Object_WebhookUrlColumn") {
+                this.webhooks[objectOndex].Url = event.value;
             }
         }
     }
@@ -826,31 +825,36 @@ export class ImportAtdComponent implements OnInit {
                 );
             });
 
-            const pepperiListObj = this.dataConvertorService.convertListData(
-                tableData
-            );
-            const buffer = [];
-            if (pepperiListObj.Rows) {
-                console.log(`Rows number: ${pepperiListObj.Rows.length}`);
-                pepperiListObj.Rows.map((row, i) => {
-                    row.UID = conflicts[i].UUID || row.UID;
-                    const osd = new ObjectSingleData(
-                        pepperiListObj.UIControl,
-                        row
-                    );
-                    osd.IsEditable = true;
-                    buffer.push(osd);
-                });
-            }
+            if (tableData.length > 0) {
+                const uiControl = this.dataConvertorService.getUiControl(
+                    tableData[0]
+                );
+                const rows = this.dataConvertorService.convertListData(
+                    tableData
+                );
 
-            this.customConflictList.initListData(
-                pepperiListObj.UIControl,
-                buffer.length,
-                buffer,
-                this.viewType,
-                "",
-                true
-            );
+                // const buffer = [];
+
+                console.log(`Rows number: ${rows.length}`);
+                rows.map((row, i) => {
+                    row.UID = conflicts[i].UUID || row.UID;
+                    // const osd = new ObjectSingleData(
+                    //     pepperiListObj.UIControl,
+                    //     row
+                    // );
+                    // osd.IsEditable = true;
+                    // buffer.push(osd);
+                });
+
+                this.customConflictList.initListData(
+                    uiControl,
+                    rows.length,
+                    rows,
+                    this.viewType,
+                    "",
+                    true
+                );
+            }
         }
     }
 
@@ -984,30 +988,36 @@ export class ImportAtdComponent implements OnInit {
                     this.convertWebhookToPepRowData(webhook, allKeys)
                 );
             });
-            const pepperiListObj = this.dataConvertorService.convertListData(
-                tableData
-            );
-            const buffer = [];
-            if (pepperiListObj.Rows) {
-                pepperiListObj.Rows.map((row, i) => {
-                    row.UID = webhooks[i].UUID || row.UID;
-                    const osd = new ObjectSingleData(
-                        pepperiListObj.UIControl,
-                        row
-                    );
-                    osd.IsEditable = true;
-                    buffer.push(osd);
-                });
-            }
+            if (tableData.length > 0) {
+                const uiControl = this.dataConvertorService.getUiControl(
+                    tableData[0]
+                );
+                const rows = this.dataConvertorService.convertListData(
+                    tableData
+                );
 
-            this.customWebhookList.initListData(
-                pepperiListObj.UIControl,
-                buffer.length,
-                buffer,
-                this.viewType,
-                "",
-                true
-            );
+                // const buffer = [];
+
+                console.log(`Rows number: ${rows.length}`);
+                rows.map((row, i) => {
+                    row.UID = webhooks[i].UUID || row.UID;
+                    // const osd = new ObjectSingleData(
+                    //     pepperiListObj.UIControl,
+                    //     row
+                    // );
+                    // osd.IsEditable = true;
+                    // buffer.push(osd);
+                });
+
+                this.customWebhookList.initListData(
+                    uiControl,
+                    rows.length,
+                    rows,
+                    this.viewType,
+                    "",
+                    true
+                );
+            }
         }
     }
 

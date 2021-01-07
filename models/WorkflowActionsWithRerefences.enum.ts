@@ -1,4 +1,5 @@
 export const WorkflowActionsWithRerefences = Object.freeze({
+  SendMail: 1,
   Webhook: 2,
   BranchWebhook: 7,
   StopConditionWebhook: 10,
@@ -31,6 +32,8 @@ export const WorkflowActionsWithRerefences = Object.freeze({
       case this.BranchWebhook:
         return "BranchWebhook";
       case this.StopConditionWebhook:
+        return "StopConditionWebhook";
+      case this.SendMail:
         return "StopConditionWebhook";
     }
     return "none";
