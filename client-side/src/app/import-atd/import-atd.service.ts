@@ -5,7 +5,7 @@ import { PepAddonService } from "pepperi-addon-service";
 import { ActivityTypeDefinition } from "./../../../../models/activityTypeDefinition";
 import { PapiClient } from "@pepperi-addons/papi-sdk";
 import jwt from "jwt-decode";
-import { PepHttpService, KeyValuePair } from "@pepperi-addons/ngx-lib";
+import { PepHttpService } from "@pepperi-addons/ngx-lib";
 import { AppService } from "../app.service";
 
 @Injectable({
@@ -55,8 +55,8 @@ export class ImportAtdService {
         }
     }
 
-    getTypeOfSubType(subtypeid: string) {
-        return this.appService.getPapiCall(`/types/${subtypeid}`);
+    getTypeOfSubType(subtypeid: string): Promise<any> {
+        return this.appService.getPapiCall(`/types/${subtypeid}`).toPromise();
     }
 
     callToServerAPI(

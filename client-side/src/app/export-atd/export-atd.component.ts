@@ -12,8 +12,8 @@ import {
     PepAddonService,
     FIELD_TYPE,
     PepUtilitiesService,
-    KeyValuePair,
     PepSessionService,
+    IPepOption,
 } from "@pepperi-addons/ngx-lib";
 import { PepColorType } from "@pepperi-addons/ngx-lib/color";
 
@@ -36,7 +36,7 @@ export class ExportAtdComponent implements OnInit {
     data: any;
     isCallbackExportFinish = false;
     disableExportButton: boolean = true;
-    activityTypes: KeyValuePair<string>[];
+    activityTypes: IPepOption[];
     selectedActivity: any;
     title = "pepperi web app test";
     color = "hsl(100, 100%, 25%)";
@@ -61,9 +61,9 @@ export class ExportAtdComponent implements OnInit {
 
     getActivityTypes() {
         this.activityTypes = [];
-        this.appService.getTypes((types) => {
+        this.appService.getTypes((types: IPepOption[]) => {
             if (types) {
-                types.sort((a, b) => a.Value.localeCompare(b.Value));
+                types.sort((a, b) => a.value.localeCompare(b.value));
                 this.activityTypes = [...types];
             }
         });
@@ -92,17 +92,29 @@ export class ExportAtdComponent implements OnInit {
                 }
                 this.exportatdService
                     .callToExportATDAPI(typeString, this.selectedActivity)
-                    .subscribe((res) => {
-                        this.isCallbackExportFinish = true;
-                        this.data = res.URL;
-                        this.appService.openDialog(
-                            this.translate.instant("Export_ATD_Dialog_Title"),
-                            this.translate.instant(
-                                "Export_ATD_Dialog_Success_Message"
-                            ),
-                            () => this.downloadUrl()
-                        );
-                    });
+                    .subscribe(
+                        (res) => {
+                            this.isCallbackExportFinish = true;
+                            this.data = res.URL;
+                            this.appService.openDialog(
+                                this.translate.instant(
+                                    "Export_ATD_Dialog_Title"
+                                ),
+                                this.translate.instant(
+                                    "Export_ATD_Dialog_Success_Message"
+                                ),
+                                () => this.downloadUrl()
+                            );
+                        },
+                        (err) => {
+                            this.isCallbackExportFinish = true;
+
+                            this.appService.openDialog(
+                                this.translate.instant("Error"),
+                                this.translate.instant("Error_Occurred")
+                            );
+                        }
+                    );
             });
     }
 
@@ -144,5 +156,17 @@ export class ExportAtdComponent implements OnInit {
                 a.dispatchEvent(e);
                 //a.removeNode()
             });
+    }
+
+    isValidHttpUrl(string) {
+        let url;
+
+        try {
+            url = new URL(string);
+        } catch (_) {
+            return false;
+        }
+
+        return url.protocol === "http:" || url.protocol === "https:";
     }
 }

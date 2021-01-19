@@ -16,8 +16,8 @@ export const ObjectType = Object.freeze({
   },
 
   values: function () {
-    return Object.keys(this).filter((k) => {
-      return typeof this[k] !== "function";
+    return Object.values(this).filter((k) => {
+      return typeof k !== "function";
     });
   },
 });

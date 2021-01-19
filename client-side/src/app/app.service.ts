@@ -3,12 +3,13 @@ import { PepDialogData } from "@pepperi-addons/ngx-lib/dialog";
 import {
     PepAddonService,
     PepHttpService,
-    KeyValuePair,
+    IPepOption,
 } from "@pepperi-addons/ngx-lib";
 import {
     PepDialogService,
     PepDialogActionButton,
 } from "@pepperi-addons/ngx-lib/dialog";
+import { HttpHeaders } from "@angular/common/http";
 @Injectable({
     providedIn: "root",
 })
@@ -42,6 +43,17 @@ export class AppService {
         body: any,
         options: any
     ) {
+        var headers_object = new HttpHeaders();
+        headers_object.append("Access-Control-Allow-Origin", "*");
+        headers_object.append(
+            "Access-Control-Allow-Headers",
+            "Origin, X-Requested-With, Content-Type, Accept"
+        );
+
+        const httpOptions = {
+            headers: headers_object,
+        };
+        options = { ...httpOptions, ...options };
         return this.addonService.postAddonApiCall(
             addonUUID,
             fileName,
@@ -101,7 +113,7 @@ export class AppService {
     }
 
     getTypes(successFunc = null) {
-        let types: KeyValuePair<string>[] = [];
+        let types: IPepOption[] = [];
         this.getPapiCall("/meta_data/transactions/types").subscribe(
             (activityTypes) => {
                 const data = (activityTypes || []).filter((i) => !!i);
@@ -109,8 +121,8 @@ export class AppService {
                     (transactionTypes) => {
                         (transactionTypes || []).concat(data).forEach((type) =>
                             types.push({
-                                Key: type.InternalID,
-                                Value: type.ExternalID,
+                                key: type.InternalID,
+                                value: type.ExternalID,
                             })
                         );
                         successFunc(types);

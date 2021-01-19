@@ -22,12 +22,12 @@ import {
     PepDataConvertorService,
     FIELD_TYPE,
     PepHttpService,
-    KeyValuePair,
     ObjectSingleData,
     PepFieldData,
     PepRowData,
     PepUtilitiesService,
     X_ALIGNMENT_TYPE,
+    IPepOption,
 } from "@pepperi-addons/ngx-lib";
 import {
     PepListComponent,
@@ -37,6 +37,9 @@ import {
 import { PepColorType } from "@pepperi-addons/ngx-lib/color";
 import { AppService } from "../app.service";
 import { rejects } from "assert";
+import { resolve } from "@angular/compiler-cli/src/ngtsc/file_system";
+import { Observable } from "rxjs/internal/Observable";
+import { JsonpInterceptor } from "@angular/common/http";
 
 @Component({
     selector: "app-import-atd",
@@ -49,7 +52,7 @@ export class ImportAtdComponent implements OnInit {
     apiEndpoint: string;
     installing: boolean = false;
     addonData: any = {};
-    activityTypes: KeyValuePair<string>[];
+    activityTypes: IPepOption[];
     selectedActivity: any;
     selectedFile: File;
     showConflictResolution: boolean = false;
@@ -89,9 +92,9 @@ export class ImportAtdComponent implements OnInit {
 
     getActivityTypes() {
         this.activityTypes = [];
-        this.appService.getTypes((types) => {
+        this.appService.getTypes((types: IPepOption[]) => {
             if (types) {
-                types.sort((a, b) => a.Value.localeCompare(b.Value));
+                types.sort((a, b) => a.value.localeCompare(b.value));
                 this.activityTypes = [...types];
             }
         });
@@ -116,16 +119,16 @@ export class ImportAtdComponent implements OnInit {
         for (const conflict of this.conflictsList) {
             await this.handleConflict(conflict, Resolution);
         }
-
-        this.importedService.callToServerAPI(
-            "upsert_to_dynamo",
-            "POST",
-            { table: `importExportATD` },
-            {
-                Key: "resolution",
-                Value: Resolution,
-            }
-        );
+        if (Resolution && Resolution != {})
+            this.importedService.callToServerAPI(
+                "upsert_to_dynamo",
+                "POST",
+                { table: `importExportATD` },
+                {
+                    Key: "resolution",
+                    Value: Resolution,
+                }
+            );
     }
 
     private async handleConflict(conflict: Conflict, Resolution: {}) {
@@ -260,8 +263,10 @@ export class ImportAtdComponent implements OnInit {
     }
 
     private async upsertFileStorage(referenceIndex: number) {
+        const url = this.referenceMap.Mapping[referenceIndex].Origin.Path;
+        var ext = url.substr(url.lastIndexOf(".") + 1);
         let file: FileStorage = {
-            FileName: this.referenceMap.Mapping[referenceIndex].Origin.Name,
+            FileName: `${this.referenceMap.Mapping[referenceIndex].Origin.Name}.${ext}`,
             URL: this.referenceMap.Mapping[referenceIndex].Origin.Path,
             Title: this.referenceMap.Mapping[referenceIndex].Origin.Name,
             Hidden: false,
@@ -379,10 +384,9 @@ export class ImportAtdComponent implements OnInit {
                 this.data = res;
             })
             .catch((res: any) => {
+                this.isCallbackImportFinish = true;
                 const title = this.translate.instant("Import_Export_Error");
-                const content = this.translate.instant("Error_While_Importing");
-                this.appService.openDialog(title, content);
-                console.log("error");
+                this.appService.openDialog(title, res);
             });
     }
 
@@ -440,7 +444,7 @@ export class ImportAtdComponent implements OnInit {
         try {
             await this.importedService
                 .getTypeOfSubType(this.selectedActivity)
-                .subscribe((typeDefinition) => {
+                .then((typeDefinition) => {
                     let exportedAtdType;
                     if (this.importedService.exportedAtd.LineFields) {
                         exportedAtdType = ObjectType.transactions;
@@ -494,44 +498,73 @@ export class ImportAtdComponent implements OnInit {
                                 this.referenceMap &&
                                 this.referenceMap.Mapping.length > 0
                             ) {
-                                this.getConflictsResolution(
-                                    this.referenceMap
-                                ).then(async (res) => {
-                                    if (!res) {
-                                        return;
-                                    }
-                                    this.conflictsList = res;
-                                    // according to Eyal's request to not showing transactionItemScope
+                                this.getConflictsResolution(this.referenceMap)
+                                    .then(async (res) => {
+                                        if (!res) {
+                                            return;
+                                        }
+                                        this.conflictsList = res;
+                                        // according to Eyal's request to not showing transactionItemScope
 
-                                    let conflictNum = this.conflictsList.filter(
-                                        (x) => x.Object != "filter"
-                                    ).length;
-                                    if (this.conflictsList && conflictNum > 0) {
-                                        this.fillResolutionFromDynamo().then(
-                                            () => {
-                                                this.isCallbackImportFinish = true;
+                                        let conflictNum = this.conflictsList.filter(
+                                            (x) => x.Object != "filter"
+                                        ).length;
+                                        if (
+                                            this.conflictsList &&
+                                            conflictNum > 0
+                                        ) {
+                                            this.fillResolutionFromDynamo().then(
+                                                () => {
+                                                    this.isCallbackImportFinish = true;
 
-                                                this.showWebhooksResolution = false;
-                                                this.showConflictResolution = true;
-                                                setTimeout(() => {
-                                                    window.dispatchEvent(
-                                                        new Event("resize")
-                                                    );
-                                                }, 1);
-                                                this.loadConflictlist();
-                                            }
-                                        );
-                                    } else if (this.webhooks.length > 0) {
-                                        this.showWebhooks();
+                                                    this.showWebhooksResolution = false;
+                                                    this.showConflictResolution = true;
+                                                    setTimeout(() => {
+                                                        window.dispatchEvent(
+                                                            new Event("resize")
+                                                        );
+                                                    }, 1);
+                                                    this.loadConflictlist();
+                                                }
+                                            );
+                                        } else if (this.webhooks.length > 0) {
+                                            this.showWebhooks();
+                                            this.isCallbackImportFinish = true;
+                                        } else {
+                                            await this.callToImportATD();
+                                        }
+                                    })
+                                    .catch((err) => {
                                         this.isCallbackImportFinish = true;
-                                    } else {
-                                        await this.callToImportATD();
-                                    }
-                                });
+
+                                        const title = this.translate.instant(
+                                            "Import_Export_Error"
+                                        );
+                                        const content = this.translate.instant(
+                                            "Error_While_Importing"
+                                        );
+                                        this.appService.openDialog(
+                                            title,
+                                            `${content}\n ${err}`
+                                        );
+                                        return;
+                                    });
                             } else {
                                 await this.callToImportATD();
                             }
+                        })
+                        .catch((err) => {
+                            throw err;
                         });
+                })
+                .catch((err) => {
+                    this.isCallbackImportFinish = true;
+
+                    const title = this.translate.instant("Import_Export_Error");
+                    const content = this.translate.instant(
+                        "Error_While_Importing"
+                    );
+                    this.appService.openDialog(title, `${content}\n ${err}`);
                 });
             //this.isCallbackImportFinish = true;
         } catch {}
@@ -545,7 +578,7 @@ export class ImportAtdComponent implements OnInit {
         );
 
         this.webhooks.forEach((w) => {
-            const val = webhooksFromDynmo[0]?.Value[w.UUID];
+            const val = webhooksFromDynmo?.Value[w.UUID];
             if (val && val != {}) {
                 w.Url = val.url ? val.url : w.Url;
                 w.SecretKey = val.secretKey ? val.secretKey : w.SecretKey;
@@ -561,7 +594,7 @@ export class ImportAtdComponent implements OnInit {
         );
 
         this.conflictsList.forEach((c) => {
-            const val = resolutionFromDynmo[0]?.Value[c.ID];
+            const val = resolutionFromDynmo?.Value[c.ID];
             if (val) {
                 c.Resolution = val;
             }
@@ -577,40 +610,47 @@ export class ImportAtdComponent implements OnInit {
     }
 
     async getConflictsResolution(referenceMap: References) {
-        let conflicts: Conflict[] = [];
+        try {
+            let conflicts: Conflict[] = [];
 
-        const refMaps = this.importedService.exportedAtd.References;
-        let unresolvedConflicts: Reference[] = [];
-        for (let i = 0; i < refMaps.length; i++) {
-            await this.handleReference(
-                refMaps[i],
-                conflicts,
-                referenceMap,
-                unresolvedConflicts
-            );
+            const refMaps = this.importedService.exportedAtd.References;
+            let unresolvedConflicts: Reference[] = [];
+            for (let i = 0; i < refMaps.length; i++) {
+                await this.handleReference(
+                    refMaps[i],
+                    conflicts,
+                    referenceMap,
+                    unresolvedConflicts
+                );
+            }
+            if (unresolvedConflicts.length > 0) {
+                this.isCallbackImportFinish = true;
+                let content = "";
+                unresolvedConflicts.forEach((c) => {
+                    if (c.Type === "type_definition") {
+                        const type = this.getStringTypeFromObjectType(
+                            c.SubType
+                        );
+                        content +=
+                            `${this.translate.instant(type)}: '${
+                                c.Name
+                            }' ${this.translate.instant("Not_Found")}` +
+                            "<br/>";
+                    } else {
+                        content +=
+                            `${c.Name} ${c.Type} ${this.translate.instant(
+                                "Not_Found"
+                            )}` + "<br/>";
+                    }
+                });
+                const title = this.translate.instant("Import_Export_Error");
+                this.appService.openDialog(title, content);
+                return null;
+            }
+            return conflicts;
+        } catch (err) {
+            throw err;
         }
-        if (unresolvedConflicts.length > 0) {
-            this.isCallbackImportFinish = true;
-            let content = "";
-            unresolvedConflicts.forEach((c) => {
-                if (c.Type === "type_definition") {
-                    const type = this.getStringTypeFromObjectType(c.SubType);
-                    content +=
-                        `${this.translate.instant(type)}: '${
-                            c.Name
-                        }' ${this.translate.instant("Not_Found")}` + "<br/>";
-                } else {
-                    content +=
-                        `${c.Name} ${c.Type} ${this.translate.instant(
-                            "Not_Found"
-                        )}` + "<br/>";
-                }
-            });
-            const title = this.translate.instant("Import_Export_Error");
-            this.appService.openDialog(title, content);
-            return null;
-        }
-        return conflicts;
     }
 
     async handleReference(
@@ -619,69 +659,74 @@ export class ImportAtdComponent implements OnInit {
         referenceMap: References,
         unresolvedConflicts: Reference[]
     ) {
-        if (ref.Type !== "webhook") {
-            let referencedPair: Mapping = referenceMap.Mapping.find(
-                (pair) => pair.Origin.Name === ref.Name
-            );
-            if (referencedPair) {
-                if (!referencedPair.Destination) {
-                    // For objects with a path (such as custom form),
-                    // if a matching object does not exist, then continue (create this object in the Execution step).
-                    if (
-                        ref.Type === "file_storage" ||
-                        ref.Type === "user_defined_table" ||
-                        ref.Type === "filter"
-                    ) {
-                        const conflict: Conflict = {
-                            Name: ref.Name,
-                            Object: referencedPair.Origin.Type,
-                            Status: "NotFound",
-                            Resolution: "CreateNew",
-                            UUID: Guid.newGuid(),
-                            ID: ref.ID,
-                            // this.resolutionOptions,
-                        };
-                        conflicts.push(conflict);
-                    } else {
-                        unresolvedConflicts.push(ref);
-                        //throw new Error(content);
-                    }
-                } else if (
-                    referencedPair.Origin.ID === referencedPair.Destination.ID
-                ) {
-                    return;
-                } else if (
-                    referencedPair.Origin.Name ===
-                    referencedPair.Destination.Name
-                ) {
-                    if (ref.Type === "file_storage") {
-                        const filesAreSame = await this.compareFileContentOfOriginAndDest(
-                            referencedPair.Origin,
-                            referencedPair.Destination
-                        );
-                        if (!filesAreSame) {
+        try {
+            if (ref.Type !== "webhook") {
+                let referencedPair: Mapping = referenceMap.Mapping.find(
+                    (pair) => pair.Origin.Name === ref.Name
+                );
+                if (referencedPair) {
+                    if (!referencedPair.Destination) {
+                        // For objects with a path (such as custom form),
+                        // if a matching object does not exist, then continue (create this object in the Execution step).
+                        if (
+                            ref.Type === "file_storage" ||
+                            ref.Type === "user_defined_table" ||
+                            ref.Type === "filter"
+                        ) {
                             const conflict: Conflict = {
-                                Name: referencedPair.Destination.Name,
-                                Object: referencedPair.Destination.Type,
-                                Status: "ExistsWithDifferentContent",
-                                Resolution: "UseExisting",
+                                Name: ref.Name,
+                                Object: referencedPair.Origin.Type,
+                                Status: "NotFound",
+                                Resolution: "CreateNew",
                                 UUID: Guid.newGuid(),
-                                ID: referencedPair.Destination.ID,
+                                ID: ref.ID,
                                 // this.resolutionOptions,
                             };
                             conflicts.push(conflict);
+                        } else {
+                            unresolvedConflicts.push(ref);
+                            //throw new Error(content);
+                        }
+                    } else if (
+                        referencedPair.Origin.ID ===
+                        referencedPair.Destination.ID
+                    ) {
+                        return;
+                    } else if (
+                        referencedPair.Origin.Name ===
+                        referencedPair.Destination.Name
+                    ) {
+                        if (ref.Type === "file_storage") {
+                            const filesAreSame = await this.compareFileContentOfOriginAndDest(
+                                referencedPair.Origin,
+                                referencedPair.Destination
+                            );
+                            if (filesAreSame == false) {
+                                const conflict: Conflict = {
+                                    Name: referencedPair.Destination.Name,
+                                    Object: referencedPair.Destination.Type,
+                                    Status: "ExistsWithDifferentContent",
+                                    Resolution: "UseExisting",
+                                    UUID: Guid.newGuid(),
+                                    ID: referencedPair.Destination.ID,
+                                    // this.resolutionOptions,
+                                };
+                                conflicts.push(conflict);
+                            }
                         }
                     }
                 }
-            }
-        } else {
-            const webhook: Webhook = {
-                Url: ref.Content.WEBHOOK_URL,
-                SecretKey: ref.Content.SECRET_KEY,
-                UUID: ref.UUID,
-            };
+            } else {
+                const webhook: Webhook = {
+                    Url: ref.Content.WEBHOOK_URL,
+                    SecretKey: ref.Content.SECRET_KEY,
+                    UUID: ref.UUID,
+                };
 
-            this.webhooks.push(webhook);
+                this.webhooks.push(webhook);
+            }
+        } catch (err) {
+            throw err;
         }
     }
 
@@ -699,12 +744,20 @@ export class ImportAtdComponent implements OnInit {
         origin: Reference,
         destinition: Reference
     ): Promise<boolean> {
-        let contentOrigin = await this.fileToBase64(origin.Name, origin.Path);
-        let contentDestinition = await this.fileToBase64(
-            destinition.Name,
-            destinition.Path
-        );
-        return contentOrigin === contentDestinition;
+        try {
+            let contentOrigin = await this.fileToBase64(
+                origin.Name,
+                origin.Path
+            );
+
+            let contentDestinition = await this.fileToBase64(
+                destinition.Name,
+                destinition.Path
+            );
+            return contentOrigin === contentDestinition;
+        } catch (err) {
+            throw err;
+        }
     }
 
     onFileSelect(event) {
@@ -734,10 +787,25 @@ export class ImportAtdComponent implements OnInit {
     }
 
     async fileToBase64(filename, filepath) {
-        const responseText = await fetch(filepath).then((r) => r.text());
-        return btoa(unescape(encodeURIComponent(responseText)));
-        //return btoa(responseText);
+        const response = await fetch(filepath);
+        if (response.status != 200) {
+            throw new Error(
+                `Failed to read file: ${filename}\n Path: ${filepath}`
+            );
+        }
+        const text = await response.text();
+        return btoa(unescape(encodeURIComponent(text)));
+
+        // return await fetch(filepath).then(async (r) => {
+        //     if (r.status != 200) {
+        //         throw new Error(
+        //             `Failed to read file: ${filename}\n Path: ${filepath}`
+        //         );
+        //     }
+        //     return await btoa(unescape(encodeURIComponent(await r.text())));
+        // });
     }
+    //return btoa(responseText);
 
     uploadFile(event) {
         let files = event.target.files;
