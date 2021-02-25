@@ -10,6 +10,7 @@ import {
     PepDialogActionButton,
 } from "@pepperi-addons/ngx-lib/dialog";
 import { HttpHeaders } from "@angular/common/http";
+import { AuditLog } from "@pepperi-addons/papi-sdk";
 @Injectable({
     providedIn: "root",
 })
@@ -26,13 +27,15 @@ export class AppService {
         addonUUID: string,
         fileName: string,
         functionName: string,
-        options: any
+        options: any,
+        isAsync: boolean
     ) {
         return this.addonService.getAddonApiCall(
             addonUUID,
             fileName,
             functionName,
-            options
+            options,
+            isAsync
         );
     }
 
@@ -41,7 +44,8 @@ export class AppService {
         fileName: string,
         functionName: string,
         body: any,
-        options: any
+        options: any,
+        isAsync: boolean
     ) {
         var headers_object = new HttpHeaders();
         headers_object.append("Access-Control-Allow-Origin", "*");
@@ -59,7 +63,8 @@ export class AppService {
             fileName,
             functionName,
             body,
-            options
+            options,
+            isAsync
         );
     }
 
@@ -78,6 +83,12 @@ export class AppService {
             showClose: false,
         });
         this.dialogService.openDefaultDialog(dialogData);
+    }
+
+    async getExecutionLog(executionUUID): Promise<AuditLog> {
+        return await this.getPapiCall(
+            `/audit_logs/${executionUUID}`
+        ).toPromise();
     }
 
     getFromAPI(apiObject, successFunc, errorFunc) {

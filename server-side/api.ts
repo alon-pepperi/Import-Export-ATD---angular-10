@@ -182,13 +182,17 @@ async function addExportOfAddonResult(
   service: MyService,
   addons: AddonOwner[]
 ) {
-  service.papiClient.addons.installedAddons
-    .addonUUID(addonUUID)
-    .export()
-    .then((res) => {
-      addons.push({ UUID: addonUUID, Data: res });
-    })
-    .catch((e) => {});
+  try {
+    service.papiClient.addons.installedAddons
+      .addonUUID(addonUUID)
+      .export()
+      .then((res) => {
+        addons.push({ UUID: addonUUID, Data: res });
+      })
+      .catch((e) => {});
+  } catch (e) {
+    // do nothing.. not each addon must implement export
+  }
 }
 
 async function addSettingsReferences(
@@ -219,22 +223,24 @@ async function addSettingsReferences(
     });
   }
 
-  if (settings.DestinationAccountsData.IDs?.length > 0) {
-    settings.DestinationAccountsData.IDs.forEach((element) => {
-      const accountIndex = accontsMetaData.findIndex(
-        (x) => x.InternalID == element
-      );
-      const reference: Reference = {
-        ID: String(accontsMetaData[accountIndex].InternalID),
-        Name: accontsMetaData[accountIndex].ExternalID,
-        Type: "type_definition",
-        SubType: ObjectType.toString(ObjectType.accounts),
-      };
-      const isExist = references.findIndex((x) => x.ID == reference.ID);
-      if (isExist === -1) {
-        references.push(reference);
-      }
-    });
+  if (settings.DestinationAccountsData?.AllTypes === false) {
+    if (settings.DestinationAccountsData.IDs?.length > 0) {
+      settings.DestinationAccountsData.IDs.forEach((element) => {
+        const accountIndex = accontsMetaData.findIndex(
+          (x) => x.InternalID == element
+        );
+        const reference: Reference = {
+          ID: String(accontsMetaData[accountIndex].InternalID),
+          Name: accontsMetaData[accountIndex].ExternalID,
+          Type: "type_definition",
+          SubType: ObjectType.toString(ObjectType.accounts),
+        };
+        const isExist = references.findIndex((x) => x.ID == reference.ID);
+        if (isExist === -1) {
+          references.push(reference);
+        }
+      });
+    }
   }
 
   if (settings.CatalogIDs?.length > 0) {
@@ -313,20 +319,22 @@ async function addFieldsReferences(
     }
     if (field.UserDefinedTableSource != null) {
       const tableID = field.UserDefinedTableSource.TableID;
-      const udts = await service.papiClient.get(
-        `/meta_data/user_defined_tables?table_id=${tableID}`
-      );
-      const udt: UserDefinedTableMetaData = JSON.parse(JSON.stringify(udts));
-      if (udt) {
-        const reference: Reference = {
-          ID: String(udt.InternalID),
-          Name: udt.TableID,
-          Type: "user_defined_table",
-          Content: JSON.stringify(udt),
-        };
-        const isExist = references.findIndex((x) => x.ID == reference.ID);
-        if (isExist === -1) {
-          references.push(reference);
+      if (tableID) {
+        const udts = await service.papiClient.get(
+          `/meta_data/user_defined_tables?table_id=${tableID}`
+        );
+        const udt: UserDefinedTableMetaData = JSON.parse(JSON.stringify(udts));
+        if (udt) {
+          const reference: Reference = {
+            ID: String(udt.InternalID),
+            Name: udt.TableID,
+            Type: "user_defined_table",
+            Content: JSON.stringify(udt),
+          };
+          const isExist = references.findIndex((x) => x.ID == reference.ID);
+          if (isExist === -1) {
+            references.push(reference);
+          }
         }
       }
     }
@@ -391,7 +399,7 @@ async function addWorkflowReferences(
 export async function import_type_definition(client: Client, request: Request) {
   const params = request.query;
   const type = params.type;
-  const subtypeid = params.subtype;
+  let subtypeid = params.subtype;
   const body = request.body;
   const map: References = body.References;
   const url: string = body.URL;
@@ -400,13 +408,22 @@ export async function import_type_definition(client: Client, request: Request) {
   let subTypeSent = subtypeid;
 
   let backupAtd: any = null;
+
   if (subtypeid) {
     backupAtd = await doExport(type, subtypeid, service);
   }
   body.backupAtdURL = backupAtd;
   let atd: ActivityTypeDefinition = <ActivityTypeDefinition>{};
   try {
-    const succeeded = await doImport(type, subtypeid, url, map, service, atd);
+    ({ atd, subtypeid } = await convertFilToATD(
+      url,
+      atd,
+      subtypeid,
+      service,
+      type
+    ));
+
+    const succeeded = await doImport(type, subtypeid, map, service, atd);
 
     if (succeeded) {
       callImportOfAddons(service, atd.Addons);
@@ -438,7 +455,7 @@ async function HandleFailure(
   if (!subTypeSent) {
     await deleteATD(subtypeid, service, type);
   } else if (backupAtd) {
-    await doImport(type, subtypeid, backupAtd.URL, null, service, atd);
+    await doImport(type, subtypeid, null, service, atd);
   }
 }
 
@@ -451,36 +468,28 @@ async function deleteATD(subtypeid: any, service: MyService, type: any) {
 }
 
 async function callImportOfAddons(service: MyService, addons: AddonOwner[]) {
-  addons?.forEach((addon) => {
-    service.papiClient.addons.installedAddons
-      .addonUUID(addon.UUID)
-      .install()
-      .catch((e) => {});
-  });
+  try {
+    addons?.forEach((addon) => {
+      service.papiClient.addons.installedAddons
+        .addonUUID(addon.UUID)
+        .import(addon.Data)
+        .catch((e) => {});
+    });
+  } catch (e) {
+    // do nothing.. not each addon must implement import
+  }
 }
 
 async function doImport(
   type: string,
   subtypeid: string,
-  url: string,
   map: References | null,
   service: MyService,
   atd: ActivityTypeDefinition
 ): Promise<boolean> {
   let succeeded = false;
-  await fetch(url, {
-    method: `GET`,
-  })
-    .then((response) => response.json())
-    .then(async (data) => {
-      atd = data;
-      if (!subtypeid) {
-        subtypeid = await CreateATD(data, service, type);
-        console.log(`Upsert new ATD: ${subtypeid} succeeded`);
-      } else {
-        await UpdateDescriptionATD(data, service, type, subtypeid);
-      }
-    });
+
+  ValidateImportAndExportTypes();
 
   console.log(`start import ATD: ${subtypeid}`);
   upsertPreparation(atd, subtypeid);
@@ -524,6 +533,45 @@ async function doImport(
     }
   );
   return succeeded;
+
+  function ValidateImportAndExportTypes() {
+    let exportedAtdType;
+    if (atd.LineFields) {
+      exportedAtdType = ObjectType.transactions;
+    } else {
+      exportedAtdType = ObjectType.activities;
+    }
+    if (ObjectType.toString(exportedAtdType) != type) {
+      if (exportedAtdType === ObjectType.activities) {
+        throw new Error(`An activity cannot be imported into a transaction`);
+      } else if (exportedAtdType === ObjectType.transactions) {
+        throw new Error(`A transacction cannot be imported into an activity`);
+      }
+    }
+  }
+}
+
+async function convertFilToATD(
+  url: string,
+  atd: ActivityTypeDefinition,
+  subtypeid: string,
+  service: MyService,
+  type: string
+) {
+  await fetch(url, {
+    method: `GET`,
+  })
+    .then((response) => response.json())
+    .then(async (data) => {
+      atd = data;
+      if (!subtypeid) {
+        subtypeid = await CreateATD(data, service, type);
+        console.log(`Upsert new ATD: ${subtypeid} succeeded`);
+      } else {
+        await UpdateDescriptionATD(data, service, type, subtypeid);
+      }
+    });
+  return { atd, subtypeid };
 }
 
 function upsertPreparation(atd: ActivityTypeDefinition, subtypeid: string) {
@@ -655,7 +703,7 @@ async function upsertDataViews(
   type: string,
   subtype: string
 ): Promise<boolean> {
-  const body = { hack: dataViews };
+  const body = dataViews;
   try {
     let currentDataViews = await service.papiClient.metaData.dataViews.find({
       where: `Context.Object.Resource='${type}' and Context.Object.InternalID=${subtype}`,
@@ -677,9 +725,10 @@ async function upsertDataViews(
     }
     dataViewsToDelete.forEach((dv) => (dv.Hidden = true));
 
-    await service.papiClient.post("/meta_data/data_views_batch", {
-      hack: dataViewsToDelete,
-    });
+    await service.papiClient.post(
+      "/meta_data/data_views_batch",
+      dataViewsToDelete
+    );
     await service.papiClient.post("/meta_data/data_views_batch", body);
     console.log(`upsert data views succeeded`);
     return true;
@@ -1110,6 +1159,7 @@ export async function upsert_to_dynamo(client: Client, request: Request) {
   const service = new MyService(client);
   const hedears = {};
   hedears["X-Pepperi-SecretKey"] = client.AddonSecretKey;
+  hedears["X-Pepperi-OwnerID"] = client.AddonUUID;
 
   const result = await service.papiClient.post(
     `/addons/data/${client.AddonUUID}/${table}`,
@@ -1128,10 +1178,12 @@ export async function get_from_dynamo(client: Client, request: Request) {
   const service = new MyService(client);
   const hedears = {};
   hedears["X-Pepperi-SecretKey"] = client.AddonSecretKey;
+  hedears["X-Pepperi-OwnerID"] = client.AddonUUID;
 
   const result = await service.papiClient.get(
     `/addons/data/${client.AddonUUID}/${table}/${key}`
   );
+
   return result;
 }
 

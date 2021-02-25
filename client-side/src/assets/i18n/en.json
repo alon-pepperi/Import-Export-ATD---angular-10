@@ -16,6 +16,7 @@
     "Activity_Cannot_Imported_To_Transaction": "An activity cannot be imported into a transaction",
     "Transaction_Cannot_Imported_To_Activity": "A transaction cannot be imported into an activity",
     "Not_Found": "not found",
+    "Objects_Not_Found_Message": "The process cannot start since some objects are missing.\nPlease create these objects and start again.",
     "Object_Not_Found": "Object not found",
     "Exists_With_Different_Content": "exists with a different content",
     "File_Named": "A file named",

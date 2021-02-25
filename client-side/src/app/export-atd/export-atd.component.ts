@@ -38,11 +38,7 @@ export class ExportAtdComponent implements OnInit {
     disableExportButton: boolean = true;
     activityTypes: IPepOption[];
     selectedActivity: any;
-    title = "pepperi web app test";
-    color = "hsl(100, 100%, 25%)";
-    value = "";
-    richTextValue =
-        '<iframe width="500px" src="https://rerroevi.sirv.com/Website/Fashion/Pinkpurse/Pinkpurse.spin"/>';
+    reportInterval = undefined;
 
     constructor(
         private translate: TranslateService,
@@ -58,6 +54,12 @@ export class ExportAtdComponent implements OnInit {
         this.getActivityTypes();
     }
     ngOnInit(): void {}
+
+    ngOnDestroy() {
+        if (this.reportInterval) {
+            window.clearInterval(this.reportInterval);
+        }
+    }
 
     getActivityTypes() {
         this.activityTypes = [];
@@ -84,38 +86,88 @@ export class ExportAtdComponent implements OnInit {
         let typeString = ``;
         this.exportatdService
             .getTypeOfSubType(this.selectedActivity)
-            .subscribe((type) => {
+            .subscribe(async (type) => {
                 if (type.Type === ObjectType.transactions) {
                     typeString = ObjectType.toString(ObjectType.transactions);
                 } else {
                     typeString = ObjectType.toString(ObjectType.activities);
                 }
-                this.exportatdService
-                    .callToExportATDAPI(typeString, this.selectedActivity)
-                    .subscribe(
-                        (res) => {
-                            this.isCallbackExportFinish = true;
-                            this.data = res.URL;
-                            this.appService.openDialog(
-                                this.translate.instant(
-                                    "Export_ATD_Dialog_Title"
-                                ),
-                                this.translate.instant(
-                                    "Export_ATD_Dialog_Success_Message"
-                                ),
-                                () => this.downloadUrl()
-                            );
-                        },
-                        (err) => {
-                            this.isCallbackExportFinish = true;
-
-                            this.appService.openDialog(
-                                this.translate.instant("Error"),
-                                this.translate.instant("Error_Occurred")
-                            );
-                        }
-                    );
+                const res = await this.exportatdService.callToExportATDAPI(
+                    typeString,
+                    this.selectedActivity
+                );
+                this.reportInterval = window.setInterval(() => {
+                    this.appService
+                        .getExecutionLog(res.ExecutionUUID)
+                        .then((logRes) => {
+                            if (
+                                logRes &&
+                                logRes.Status &&
+                                logRes.Status.Name !== "InProgress" &&
+                                logRes.Status.Name !== "InRetry"
+                            ) {
+                                window.clearInterval(this.reportInterval);
+                                const resultObj = JSON.parse(
+                                    logRes.AuditInfo.ResultObject
+                                );
+                                if (resultObj.URL) {
+                                    this.isCallbackExportFinish = true;
+                                    this.data = resultObj.URL;
+                                    this.appService.openDialog(
+                                        this.translate.instant(
+                                            "Export_ATD_Dialog_Title"
+                                        ),
+                                        this.translate.instant(
+                                            "Export_ATD_Dialog_Success_Message"
+                                        ),
+                                        () => this.downloadUrl()
+                                    );
+                                } else if (resultObj.success == "Exception") {
+                                    this.isCallbackExportFinish = true;
+                                    window.clearInterval(this.reportInterval);
+                                    let error = JSON.parse(
+                                        resultObj.errorMessage.substring(
+                                            resultObj.errorMessage.indexOf("{")
+                                        )
+                                    ).fault.faultstring;
+                                    let contentError =
+                                        error && error != ""
+                                            ? error
+                                            : this.translate.instant(
+                                                  "Error_Occurred"
+                                              );
+                                    this.appService.openDialog(
+                                        this.translate.instant("Error"),
+                                        contentError
+                                    );
+                                }
+                            }
+                        });
+                }, 1500);
             });
+        // .subscribe(
+        //     (res) => {
+        //         this.isCallbackExportFinish = true;
+        //         this.data = res.URL;
+        //         this.appService.openDialog(
+        //             this.translate.instant(
+        //                 "Export_ATD_Dialog_Title"
+        //             ),
+        //             this.translate.instant(
+        //                 "Export_ATD_Dialog_Success_Message"
+        //             ),
+        //             () => this.downloadUrl()
+        //         );
+        //     },
+        //     (err) => {
+        //         this.isCallbackExportFinish = true;
+
+        //         this.appService.openDialog(
+        //             this.translate.instant("Error"),
+        //             this.translate.instant("Error_Occurred")
+        //         );
+        //     }
+        // );
     }
 
     downloadUrl() {

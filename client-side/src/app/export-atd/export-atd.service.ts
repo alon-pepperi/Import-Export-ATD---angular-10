@@ -6,6 +6,7 @@ import { PepHttpService, PepSessionService } from "@pepperi-addons/ngx-lib";
 
 import { AppService } from "../app.service";
 import { Observable } from "rxjs";
+import { promises } from "dns";
 
 @Injectable({
     providedIn: "root",
@@ -28,14 +29,16 @@ export class ExportAtdService {
         return this.appService.getPapiCall(`/types/${subtypeid}`);
     }
 
-    callToExportATDAPI(type: string, subtypeid: string): Observable<any> {
+    callToExportATDAPI(type: string, subtypeid: string): Promise<any> {
         const params = { type: type, subtype: subtypeid };
-        const exportAtdResult = this.appService.getAddonServerAPI(
-            this.pluginUUID,
-            "api",
-            "export_type_definition",
-            { params: params }
-        );
-        return exportAtdResult;
+        return this.appService
+            .getAddonServerAPI(
+                this.pluginUUID,
+                "api",
+                "export_type_definition",
+                { params: params },
+                true
+            )
+            .toPromise();
     }
 }

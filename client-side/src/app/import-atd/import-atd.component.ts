@@ -72,6 +72,7 @@ export class ImportAtdComponent implements OnInit {
     isCallbackWebhokksFinish = false;
     isCallbackConflictsFinish = false;
     isCallbackImportFinish = false;
+    reportInterval = undefined;
 
     @ViewChild("conflictslist") customConflictList: PepListComponent;
     @ViewChild("webhookslist") customWebhookList: PepListComponent;
@@ -102,6 +103,12 @@ export class ImportAtdComponent implements OnInit {
 
     ngOnInit() {}
 
+    ngOnDestroy() {
+        if (this.reportInterval) {
+            window.clearInterval(this.reportInterval);
+        }
+    }
+
     async onOkConflictsClicked() {
         this.disableCancelConflictButton = true;
         this.isCallbackConflictsFinish = false;
@@ -127,7 +134,8 @@ export class ImportAtdComponent implements OnInit {
                 {
                     Key: "resolution",
                     Value: Resolution,
-                }
+                },
+                false
             );
     }
 
@@ -332,7 +340,8 @@ export class ImportAtdComponent implements OnInit {
             {
                 Key: "webhooks",
                 Value: dynamoWebhooks,
-            }
+            },
+            false
         );
         await this.callToImportATD();
         //this.isCallbackWebhokksFinish = true;
@@ -354,40 +363,68 @@ export class ImportAtdComponent implements OnInit {
 
         this.deleteContentFromMap();
 
-        const importAtdResult = this.importedService
-            .callToServerAPI(
-                "import_type_definition",
-                "POST",
-                { type: this.typeString, subtype: this.selectedActivity },
-                { URL: url, References: this.referenceMap }
-            )
-            .then((res: any) => {
-                if (!this.isCallbackWebhokksFinish) {
-                    this.isCallbackWebhokksFinish = true;
-                }
-                if (!this.isCallbackConflictsFinish) {
-                    this.isCallbackConflictsFinish = true;
-                }
-                if (!this.isCallbackImportFinish) {
-                    this.isCallbackImportFinish = true;
-                }
+        const res = await this.importedService.callToServerAPI(
+            "import_type_definition",
+            "POST",
+            { type: this.typeString, subtype: this.selectedActivity },
+            { URL: url, References: this.referenceMap },
+            true
+        );
 
-                const title = this.translate.instant("Import_Export_Success");
-                const content = this.translate.instant(
-                    "Import_Finished_Succefully"
-                );
-                this.appService.openDialog(title, content, () => {
-                    window.location.reload();
+        this.reportInterval = window.setInterval(() => {
+            this.appService
+                .getExecutionLog(res.ExecutionUUID)
+                .then((logRes) => {
+                    if (
+                        logRes &&
+                        logRes.Status &&
+                        logRes.Status.Name !== "InProgress" &&
+                        logRes.Status.Name !== "InRetry"
+                    ) {
+                        const resultObj = JSON.parse(
+                            logRes.AuditInfo.ResultObject
+                        );
+                        if (!this.isCallbackWebhokksFinish) {
+                            this.isCallbackWebhokksFinish = true;
+                        }
+                        if (!this.isCallbackConflictsFinish) {
+                            this.isCallbackConflictsFinish = true;
+                        }
+                        if (!this.isCallbackImportFinish) {
+                            this.isCallbackImportFinish = true;
+                        }
+
+                        if (Object.keys(resultObj).length === 0) {
+                            const title = this.translate.instant(
+                                "Import_Export_Success"
+                            );
+                            const content = this.translate.instant(
+                                "Import_Finished_Succefully"
+                            );
+                            this.appService.openDialog(title, content, () => {
+                                window.location.reload();
+                            });
+                            window.clearInterval(this.reportInterval);
+
+                            //window.clearInterval();
+                            this.data = res;
+                        } else if (resultObj.success == "Exception") {
+                            const title = this.translate.instant(
+                                "Import_Export_Error"
+                            );
+                            window.clearInterval(this.reportInterval);
+                            this.isCallbackImportFinish = true;
+                            this.appService.openDialog(
+                                title,
+                                resultObj.errorMessage,
+                                () => {
+                                    window.location.reload();
+                                }
+                            );
+                        }
+                    }
                 });
-
-                //window.clearInterval();
-                this.data = res;
-            })
-            .catch((res: any) => {
-                this.isCallbackImportFinish = true;
-                const title = this.translate.instant("Import_Export_Error");
-                this.appService.openDialog(title, res);
-            });
+        }, 1500);
     }
 
     private deleteContentFromMap() {
@@ -490,7 +527,8 @@ export class ImportAtdComponent implements OnInit {
                             {
                                 References: this.importedService.exportedAtd
                                     .References,
-                            }
+                            },
+                            false
                         )
                         .then(async (res) => {
                             this.referenceMap = res;
@@ -574,14 +612,17 @@ export class ImportAtdComponent implements OnInit {
         let webhooksFromDynmo = await this.importedService.callToServerAPI(
             "get_from_dynamo",
             "GET",
-            { table: `importExportATD`, key: `webhooks` }
+            { table: `importExportATD`, key: `webhooks` },
+            false
         );
-
         this.webhooks.forEach((w) => {
-            const val = webhooksFromDynmo?.Value[w.UUID];
-            if (val && val != {}) {
-                w.Url = val.url ? val.url : w.Url;
-                w.SecretKey = val.secretKey ? val.secretKey : w.SecretKey;
+            const value = webhooksFromDynmo?.Value;
+            if (value) {
+                const val = value[w.UUID];
+                if (val && val != {}) {
+                    w.Url = val.url ? val.url : w.Url;
+                    w.SecretKey = val.secretKey ? val.secretKey : w.SecretKey;
+                }
             }
         });
     }
@@ -590,13 +631,17 @@ export class ImportAtdComponent implements OnInit {
         let resolutionFromDynmo = await this.importedService.callToServerAPI(
             "get_from_dynamo",
             "GET",
-            { table: `importExportATD`, key: `resolution` }
+            { table: `importExportATD`, key: `resolution` },
+            false
         );
 
         this.conflictsList.forEach((c) => {
-            const val = resolutionFromDynmo?.Value[c.ID];
-            if (val) {
-                c.Resolution = val;
+            const value = resolutionFromDynmo?.Value;
+            if (value) {
+                const val = value[c.ID];
+                if (val) {
+                    c.Resolution = val;
+                }
             }
         });
     }
@@ -625,24 +670,26 @@ export class ImportAtdComponent implements OnInit {
             }
             if (unresolvedConflicts.length > 0) {
                 this.isCallbackImportFinish = true;
-                let content = "";
+                let content = `${this.translate.instant(
+                    "Objects_Not_Found_Message"
+                )}<br/><ul>`;
                 unresolvedConflicts.forEach((c) => {
                     if (c.Type === "type_definition") {
                         const type = this.getStringTypeFromObjectType(
                             c.SubType
                         );
                         content +=
-                            `${this.translate.instant(type)}: '${
+                            `<li>${this.translate.instant(type)}: '${
                                 c.Name
                             }' ${this.translate.instant("Not_Found")}` +
-                            "<br/>";
+                            "</li>";
                     } else {
-                        content +=
-                            `${c.Name} ${c.Type} ${this.translate.instant(
-                                "Not_Found"
-                            )}` + "<br/>";
+                        content += `<li>'${c.Name}' ${
+                            c.Type
+                        } ${this.translate.instant("Not_Found")}</li>`;
                     }
                 });
+                content += `</ul>`;
                 const title = this.translate.instant("Import_Export_Error");
                 this.appService.openDialog(title, content);
                 return null;

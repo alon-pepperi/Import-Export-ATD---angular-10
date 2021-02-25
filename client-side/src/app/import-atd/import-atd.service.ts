@@ -63,19 +63,33 @@ export class ImportAtdService {
         methodName: string,
         method: string,
         params: any,
-        body?: any
+        body?: any,
+        isAsync?: boolean
     ): Promise<any> {
         if (method === "GET") {
             return this.appService
-                .getAddonServerAPI(this.pluginUUID, "api", methodName, {
-                    params: params,
-                })
+                .getAddonServerAPI(
+                    this.pluginUUID,
+                    "api",
+                    methodName,
+                    {
+                        params: params,
+                    },
+                    isAsync
+                )
                 .toPromise();
         } else if (method === "POST") {
             return this.appService
-                .postAddonServerAPI(this.pluginUUID, "api", methodName, body, {
-                    params: params,
-                })
+                .postAddonServerAPI(
+                    this.pluginUUID,
+                    "api",
+                    methodName,
+                    body,
+                    {
+                        params: params,
+                    },
+                    isAsync
+                )
                 .toPromise();
         }
     }

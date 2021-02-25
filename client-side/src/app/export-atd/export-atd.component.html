@@ -12,19 +12,14 @@
         <div class="content">
             <div class="child1 child-container">
                 <pep-select
-                    required="false"
-                    xAlignment="'right'"
-                    rowSpan="2"
                     key="select1"
                     label="{{ 'Select_Activity_To_Export' | translate }}"
-                    title="selectedActivity"
                     [options]="activityTypes"
                     (valueChange)="elementClicked($event)"
                 >
                 </pep-select>
 
                 <button
-                    rowSpan="2"
                     mat-button
                     pepButtonLoader
                     [disabled]="disableExportButton"
