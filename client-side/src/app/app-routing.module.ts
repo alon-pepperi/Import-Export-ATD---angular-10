@@ -10,6 +10,12 @@ const routes: Routes = [
     {
         path: `settings/e9029d7f-af32-4b0e-a513-8d9ced6f8186/export-atd`,
         component: ExportAtdComponent,
+        // children: [
+        //     {
+        //         path: '',
+        //         loadChildren: () => import('./export-atd/export-atd.module').then(m => m.ExportAtdModule),
+        //     }
+        // ]
     },
     {
         path: `settings/e9029d7f-af32-4b0e-a513-8d9ced6f8186/import-atd`,
@@ -31,7 +37,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-    imports: [RouterModule.forRoot(routes)],
+    imports: [RouterModule.forRoot(routes, { relativeLinkResolution: 'legacy' })],
     exports: [RouterModule],
 })
 export class AppRoutingModule {}
