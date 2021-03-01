@@ -1,8 +1,9 @@
 import { NgModule } from "@angular/core";
 import { Routes, RouterModule } from "@angular/router";
 import { EmptyRouteComponent } from "./empty-route/empty-route.component";
-import { ImportAtdComponent } from "./import-atd/import-atd.component";
-import { ExportAtdComponent } from "./export-atd/export-atd.component";
+import { ImportAtdComponent } from "./import-atd/index";
+import { ExportAtdComponent } from "./export-atd/index";
+// import { ExportAtdComponent } from "./export-atd/export-atd.module";
 
 // import * as config from '../../../addon.config.json';
 

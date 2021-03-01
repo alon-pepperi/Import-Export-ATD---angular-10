@@ -3,9 +3,9 @@ import { Injectable } from "@angular/core";
 import { PepAddonService } from "pepperi-addon-service";
 // @ts-ignore
 import { ActivityTypeDefinition } from "./../../../../models/activityTypeDefinition";
-import { PapiClient } from "@pepperi-addons/papi-sdk";
-import jwt from "jwt-decode";
-import { PepHttpService } from "@pepperi-addons/ngx-lib";
+// import { PapiClient } from "@pepperi-addons/papi-sdk";
+// import jwt from "jwt-decode";
+// import { PepHttpService } from "@pepperi-addons/ngx-lib";
 import { AppService } from "../app.service";
 
 @Injectable({
@@ -24,7 +24,7 @@ export class ImportAtdService {
 
     constructor(
         private appService: AppService,
-        private httpService: PepHttpService
+        // private httpService: PepHttpService
     ) {}
 
     //   callToAddonApi(
@@ -49,14 +49,17 @@ export class ImportAtdService {
 
     callToPapi(method: string, url: string, body?: any): Promise<any> {
         if (method === "GET") {
-            return this.appService.getPapiCall(url).toPromise();
+            return this.appService.getPapiCall(url);
+            // return this.appService.getPapiCall(url).toPromise();
         } else if (method === "POST") {
-            return this.appService.postPapiCall(url, body).toPromise();
+            return this.appService.postPapiCall(url, body);
+            // return this.appService.postPapiCall(url, body).toPromise();
         }
     }
 
     getTypeOfSubType(subtypeid: string): Promise<any> {
-        return this.appService.getPapiCall(`/types/${subtypeid}`).toPromise();
+        // return this.appService.getPapiCall(`/types/${subtypeid}`).toPromise();
+        return this.appService.getPapiCall(`/types/${subtypeid}`);
     }
 
     callToServerAPI(
@@ -76,8 +79,7 @@ export class ImportAtdService {
                         params: params,
                     },
                     isAsync
-                )
-                .toPromise();
+                );
         } else if (method === "POST") {
             return this.appService
                 .postAddonServerAPI(
@@ -89,8 +91,7 @@ export class ImportAtdService {
                         params: params,
                     },
                     isAsync
-                )
-                .toPromise();
+                );
         }
     }
 }

@@ -1,8 +1,8 @@
-import { Component, OnInit, Type, ViewChild } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit, Type, ViewChild } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
 // @ts-ignore
 import { UserService } from "pepperi-user-service";
-import { ImportAtdService } from "./import-atd.service";
+import { ImportAtdService } from "./index";
 import { Reference } from "./../../../../models/reference";
 import { Conflict } from "./../../../../models/conflict";
 import { ObjectType } from "./../../../../models/ObjectType.enum";
@@ -21,7 +21,7 @@ import {
     PepCustomizationService,
     PepDataConvertorService,
     FIELD_TYPE,
-    PepHttpService,
+    // PepHttpService,
     ObjectSingleData,
     PepFieldData,
     PepRowData,
@@ -40,6 +40,7 @@ import { rejects } from "assert";
 import { resolve } from "@angular/compiler-cli/src/ngtsc/file_system";
 import { Observable } from "rxjs/internal/Observable";
 import { JsonpInterceptor } from "@angular/common/http";
+import { PepSelectComponent } from "@pepperi-addons/ngx-lib/select";
 
 @Component({
     selector: "app-import-atd",
@@ -76,6 +77,7 @@ export class ImportAtdComponent implements OnInit {
 
     @ViewChild("conflictslist") customConflictList: PepListComponent;
     @ViewChild("webhookslist") customWebhookList: PepListComponent;
+    @ViewChild('pepSelect') pepSelect: PepSelectComponent;
 
     constructor(
         private dataConvertorService: PepDataConvertorService,
@@ -83,9 +85,11 @@ export class ImportAtdComponent implements OnInit {
         private appService: AppService,
         private translate: TranslateService,
         private customizationService: PepCustomizationService,
-        private httpService: PepHttpService,
+        // private httpService: PepHttpService,
         private addonService: PepAddonService,
-        private importedService: ImportAtdService
+        private importedService: ImportAtdService,
+        private cd: ChangeDetectorRef
+
     ) {
         this.getActivityTypes();
         const browserCultureLang = translate.getBrowserCultureLang();
@@ -372,7 +376,34 @@ export class ImportAtdComponent implements OnInit {
         );
 
         this.reportInterval = window.setInterval(() => {
-            this.appService
+            if (Object.keys(res).length === 0) {
+                if (!this.isCallbackWebhokksFinish) {
+                    this.isCallbackWebhokksFinish = true;
+                }
+                if (!this.isCallbackConflictsFinish) {
+                    this.isCallbackConflictsFinish = true;
+                }
+                if (!this.isCallbackImportFinish) {
+                    this.isCallbackImportFinish = true;
+                }
+
+
+                    const title = this.translate.instant(
+                        "Import_Export_Success"
+                    );
+                    const content = this.translate.instant(
+                        "Import_Finished_Succefully"
+                    );
+                    this.appService.openDialog(title, content, () => {
+                        window.location.reload();
+                    });
+                    window.clearInterval(this.reportInterval);
+
+                    //window.clearInterval();
+                    this.data = res;
+            }
+            else {
+                this.appService
                 .getExecutionLog(res.ExecutionUUID)
                 .then((logRes) => {
                     if (
@@ -424,6 +455,8 @@ export class ImportAtdComponent implements OnInit {
                         }
                     }
                 });
+            }
+
         }, 1500);
     }
 
@@ -808,6 +841,7 @@ export class ImportAtdComponent implements OnInit {
     }
 
     onFileSelect(event) {
+        this.cd.detectChanges();
         let fileObj = event.value;
         if (fileObj.length > 0) {
             const file = JSON.parse(fileObj);
@@ -872,6 +906,12 @@ export class ImportAtdComponent implements OnInit {
     }
 
     elementClicked(event) {
+        this.pepSelect.select.overlayDir.backdropClick.subscribe( ev => {
+            this.pepSelect.select.close();
+            this.cd.detectChanges();
+        });
+          this.pepSelect.select.close();
+          this.cd.detectChanges();
         this.selectedActivity = event.value;
         if (event.value === "") {
             this.disableImportButton = true;
@@ -901,7 +941,7 @@ export class ImportAtdComponent implements OnInit {
     }
 
     private validateConflictButtonEnabled() {
-        console.log(`in validateConflictButtonEnabled, this.conflictsList: 
+        console.log(`in validateConflictButtonEnabled, this.conflictsList:
         ${JSON.stringify(this.conflictsList)}`);
         if (
             this.conflictsList.filter(

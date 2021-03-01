@@ -1338,10 +1338,10 @@
     puka "^1.0.1"
     read-package-json-fast "^2.0.1"
 
-"@pepperi-addons/ngx-lib@^0.1.106":
-  version "0.1.150"
-  resolved "https://registry.yarnpkg.com/@pepperi-addons/ngx-lib/-/ngx-lib-0.1.150.tgz#33bb0a5691595ebaf58d5027b9aa320fb44d7607"
-  integrity sha512-wNNHokZKm/oR3r5iS/OUmFbuT95OcsmwShEzT0r6SC/ORnoXRg79QmrWXfGL6h2mSGuBOnoLv9eUvEKlIGU5aA==
+"@pepperi-addons/ngx-lib@^0.1.154":
+  version "0.1.154"
+  resolved "https://registry.yarnpkg.com/@pepperi-addons/ngx-lib/-/ngx-lib-0.1.154.tgz#22c62b6ea4e575101fe6414514057c6ae36a80f6"
+  integrity sha512-p7a6D3ogJ3+1cBUkysBlpqRKFgzyB6YlUhbhakeL0HRZeEftyvmN6RxkBmmcsqKs5Xvf+PdM8hs/G9Ah0wr8Uw==
   dependencies:
     tslib "^2.0.0"
 
@@ -6038,6 +6038,13 @@ pako@~1.0.2:
   resolved "https://registry.yarnpkg.com/pako/-/pako-1.0.11.tgz#6c9599d340d54dfd3946380252a35705a6b992bf"
   integrity sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==
 
+papi-sdk-web@^1.20.3:
+  version "1.20.3"
+  resolved "https://registry.yarnpkg.com/papi-sdk-web/-/papi-sdk-web-1.20.3.tgz#d1bb6d1cd075baf0f99b114b74f5b651289e9ce4"
+  integrity sha512-gzQKBRdjT4DVN81t+5jMBVUf1QHmOuW7H67NA4aRyioqZcCya6YVWGeCQV2a5C19W+pV9S3J0mXDyhXUDueTRQ==
+  dependencies:
+    node-fetch "^2.6.0"
+
 parchment@^1.1.4:
   version "1.1.4"
   resolved "https://registry.yarnpkg.com/parchment/-/parchment-1.1.4.tgz#aeded7ab938fe921d4c34bc339ce1168bc2ffde5"
@@ -7396,6 +7403,13 @@ simple-swizzle@^0.2.2:
   integrity sha1-pNprY1/8zMoz9w0Xy5JZLeleVXo=
   dependencies:
     is-arrayish "^0.3.1"
+
+single-spa-angular-webpack5@^4.9.3:
+  version "4.9.3"
+  resolved "https://registry.yarnpkg.com/single-spa-angular-webpack5/-/single-spa-angular-webpack5-4.9.3.tgz#55b7904b79ef55c26557e876913c9016f79109ba"
+  integrity sha512-Dls3cG52AKj0j4w0Ro/na4bF/VF6Whe4K5tt0dAFbyXr/fUfl65SKe/n+mBb2S+OHoeN0cDhExXtbhck+ln/GA==
+  dependencies:
+    tslib "^2.0.0"
 
 single-spa-angular@^4.9.2:
   version "4.9.2"

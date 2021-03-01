@@ -1,5 +1,6 @@
-import { ImportAtdModule } from './import-atd/import-atd.module';
-import { ExportAtdModule } from './export-atd/export-atd.module';
+import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
+import { ImportAtdModule } from './import-atd/index';
+import { ExportAtdModule } from './export-atd/index';
 import { BrowserModule } from "@angular/platform-browser";
 import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 
@@ -9,21 +10,32 @@ import { AppRoutingModule } from "./app-routing.module";
 import { AppComponent } from "./app.component";
 import { PepUIModule } from "./modules/pepperi.module";
 import { MaterialModule } from "./modules/material.module";
+import { HttpClient } from '@angular/common/http';
+import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 
+export function createTranslateLoader(http: HttpClient) {
+    return new TranslateHttpLoader(http, './assets/i18n/', '.json');
+}
 @NgModule({
     declarations: [AppComponent,
-
     ],
     imports: [
         BrowserModule,
         BrowserAnimationsModule,
         AppRoutingModule,
+        ExportAtdModule,
+        ImportAtdModule,
         PepUIModule,
         MaterialModule,
-        ExportAtdModule,
-        ImportAtdModule
+        TranslateModule.forRoot({
+            loader: {
+              provide: TranslateLoader,
+              useFactory: (createTranslateLoader),
+              deps: [HttpClient]
+            }
+          })
     ],
-    providers: [],
+    providers: [TranslateService],
     bootstrap: [AppComponent],
 })
 export class AppModule {}
