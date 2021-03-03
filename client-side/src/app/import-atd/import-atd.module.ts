@@ -46,13 +46,6 @@ import { MultiTranslateHttpLoader } from 'ngx-translate-multi-http-loader';
   imports: [
     CommonModule,
     BrowserAnimationsModule,
-    // TranslateModule.forRoot({
-    //     loader: {
-    //         provide: TranslateLoader,
-    //         useFactory: createTranslateLoader,
-    //         deps: [HttpClient, PepFileService, PepAddonService],
-    //     },
-    // })
     PepUIModule,
     MaterialModule,
   ],

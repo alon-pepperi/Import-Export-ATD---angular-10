@@ -73,7 +73,7 @@ export class ExportAtdComponent implements OnInit {
 
     exportAtd() {
         this.isCallbackExportFinish = false;
-        debugger;
+        // debugger;
         let typeString = ``;
         this.exportedService.getTypeOfSubType(this.selectedActivity)
             .then(async (type) => {

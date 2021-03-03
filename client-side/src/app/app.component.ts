@@ -1,3 +1,4 @@
+import { TranslateService } from '@ngx-translate/core';
 import { Component, OnInit } from "@angular/core";
 import { PepCustomizationService, PepStyleType } from "@pepperi-addons/ngx-lib";
 
@@ -11,7 +12,8 @@ export class AppComponent implements OnInit {
 
     showLoading = false;
 
-    constructor(public customizationService: PepCustomizationService) {}
+    constructor(public customizationService: PepCustomizationService,
+        private translate: TranslateService) {}
 
     ngOnInit() {
         this.customizationService.setThemeVariables();

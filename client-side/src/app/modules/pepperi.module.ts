@@ -31,6 +31,7 @@ import { PepSizeDetectorModule } from "@pepperi-addons/ngx-lib/size-detector";
 import { PepTextareaModule } from "@pepperi-addons/ngx-lib/textarea";
 import { PepTextboxModule } from "@pepperi-addons/ngx-lib/textbox";
 import { PepListModule } from "@pepperi-addons/ngx-lib/list";
+import { PepTopBarModule } from "@pepperi-addons/ngx-lib/top-bar";
 import { HttpClient } from "@angular/common/http";
 import {
     TranslateModule,
@@ -93,6 +94,7 @@ const pepperiComponentsModules = [
     PepTextboxModule,
     PepIconModule,
     PepFilesUploaderModule,
+    PepTopBarModule
 ];
 
 @NgModule({

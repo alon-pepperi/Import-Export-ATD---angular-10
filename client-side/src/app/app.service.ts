@@ -49,12 +49,16 @@ export class AppService {
         options: any,
         isAsync: boolean
     ) {
+        let exportAtdResult;
+        if (isAsync) {
+            exportAtdResult = await  this.papiClient.addons.api.uuid(this.pluginUUID).async()
+                                .file(fileName).func(functionName).get(options.params);
 
-        const exportAtdResult = await  this.papiClient.addons.api
-        .uuid(this.pluginUUID)
-        .file(fileName)
-        .func(functionName)
-        .get(options.params)
+        } else {
+            exportAtdResult = await  this.papiClient.addons.api.uuid(this.pluginUUID)
+            .file(fileName).func(functionName).get(options.params);
+        }
+
 
         return exportAtdResult;
 
@@ -86,12 +90,18 @@ export class AppService {
         //     headers: headers_object,
         // };
         // options = { ...httpOptions, ...options };
+        let exportAtdResult: Promise<any>;
+        if (isAsync) {
+            exportAtdResult = await  this.papiClient.addons.api.uuid(this.pluginUUID).async()
+            .file(fileName).func(functionName).post(options.params, body).then(res =>  res).catch(e => { debugger });
 
-        const exportAtdResult = await  this.papiClient.addons.api
-        .uuid(this.pluginUUID)
-        .file(fileName)
-        .func(functionName)
-        .post(options.params, body)
+
+        } else {
+            exportAtdResult = await  this.papiClient.addons.api.uuid(this.pluginUUID)
+            .file(fileName).func(functionName).post(options.params, body).then(res =>  res).catch(e => { debugger });
+
+        }
+
 
         return exportAtdResult;
         // return this.addonService.postAddonApiCall(
@@ -122,9 +132,7 @@ export class AppService {
     }
 
     async getExecutionLog(executionUUID): Promise<AuditLog> {
-        return await this.getPapiCall(
-            `/audit_logs/${executionUUID}`
-        );
+        return this.getPapiCall(`/audit_logs/${executionUUID}`);
     }
 
     getFromAPI(apiObject, successFunc, errorFunc) {

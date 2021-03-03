@@ -1338,10 +1338,10 @@
     puka "^1.0.1"
     read-package-json-fast "^2.0.1"
 
-"@pepperi-addons/ngx-lib@^0.1.154":
-  version "0.1.154"
-  resolved "https://registry.yarnpkg.com/@pepperi-addons/ngx-lib/-/ngx-lib-0.1.154.tgz#22c62b6ea4e575101fe6414514057c6ae36a80f6"
-  integrity sha512-p7a6D3ogJ3+1cBUkysBlpqRKFgzyB6YlUhbhakeL0HRZeEftyvmN6RxkBmmcsqKs5Xvf+PdM8hs/G9Ah0wr8Uw==
+"@pepperi-addons/ngx-lib@^0.1.158":
+  version "0.1.158"
+  resolved "https://registry.yarnpkg.com/@pepperi-addons/ngx-lib/-/ngx-lib-0.1.158.tgz#cfa482f725303f928d3e9f6e6fa31242393bdefc"
+  integrity sha512-M8TvtN2ohwrKQYEZZXb1PbnBBRZ1yNFft+mExvcLNjxikwrrCbVwPAPNCBukUHEtj+VZCyMe/xMNvJHogvBl/w==
   dependencies:
     tslib "^2.0.0"
 
