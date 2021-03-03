@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, ViewChild } from "@angular/core";
+import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
 import { ObjectType } from "./../../../../models/ObjectType.enum";
 import {
@@ -24,6 +24,8 @@ export class ExportAtdComponent implements OnInit {
     reportInterval = undefined;
     pluginUUID = `e9029d7f-af32-4b0e-a513-8d9ced6f8186`;
     @ViewChild('pepSelect') pepSelect: PepSelectComponent;
+    @Input() options;
+    atd;
 
 
     constructor(
@@ -37,7 +39,10 @@ export class ExportAtdComponent implements OnInit {
     ) {
         this.getActivityTypes();
     }
-    ngOnInit(): void {}
+    ngOnInit(): void {
+        this.atd = this.options?.atd;
+    }
+
 
     ngOnDestroy() {
         if (this.reportInterval) {
