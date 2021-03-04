@@ -2,10 +2,11 @@
 @import 'ngx-lib/src/core/style/abstracts/variables';
 
 .addon-page-container {
-    .child-container {
+    .content {
         display: inline-table;
-        // margin-right: 4rem;
+        margin-right: 4rem;
         width: 20rem;
+        margin-top:var(--pep-spacing-lg, 1rem);
     }
 }
 
