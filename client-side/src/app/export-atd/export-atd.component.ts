@@ -145,29 +145,6 @@ export class ExportAtdComponent implements OnInit {
                         });
                 }, 1500);
             });
-        // .subscribe(
-        //     (res) => {
-        //         this.isCallbackExportFinish = true;
-        //         this.data = res.URL;
-        //         this.appService.openDialog(
-        //             this.translate.instant(
-        //                 "Export_ATD_Dialog_Title"
-        //             ),
-        //             this.translate.instant(
-        //                 "Export_ATD_Dialog_Success_Message"
-        //             ),
-        //             () => this.downloadUrl()
-        //         );
-        //     },
-        //     (err) => {
-        //         this.isCallbackExportFinish = true;
-
-        //         this.appService.openDialog(
-        //             this.translate.instant("Error"),
-        //             this.translate.instant("Error_Occurred")
-        //         );
-        //     }
-        // );
     }
 
     downloadUrl() {

@@ -1,10 +1,7 @@
 import { Injectable } from "@angular/core";
 //@ts-ignore
-import { PepAddonService } from "pepperi-addon-service";
 // @ts-ignore
 import { ActivityTypeDefinition } from "./../../../../models/activityTypeDefinition";
-import { PapiClient } from "@pepperi-addons/papi-sdk";
-import jwt from "jwt-decode";
 import { PepHttpService } from "@pepperi-addons/ngx-lib";
 import { AppService } from "../app.service";
 
@@ -14,7 +11,6 @@ import { AppService } from "../app.service";
 export class ImportAtdService {
     [x: string]: any;
 
-    file: File;
     accessToken = "";
     parsedToken: any;
     papiBaseURL = "";
