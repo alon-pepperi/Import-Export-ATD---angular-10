@@ -1,5 +1,4 @@
-# @pepperi-addons Typescript Template
-
+# @pepperi-addons - Import/Export ATD Addon
 A template for creating a pepperi addon with an angular app for the client-side & a typescript nodejs app for the server-side
 
 * debugging server side right in vscode 
@@ -16,11 +15,15 @@ A template for creating a pepperi addon with an angular app for the client-side 
 
 #### Install by running 
 ``` bash
-npm init @pepperi-addons
+npm run init (runs npm install on all projects)
 ```
-or 
+or if  you need to install only in client-side or server side:
 ``` bash
-npx @pepperi-addons/create
+Example: "cd client-side && npm install"
+If packge-lock.json exists:
+run "npm ci" (deletes node_moduels folder and reinstalls all dependecies according to package-lock.json file)
+If you're impelmenting the addon as sub-addon (webpack5+):
+run "yarn"
 ```
 
 ## Project structure
@@ -69,37 +72,3 @@ Then run:
 npm run publish-addon
 ```
 
-## Addon API
----
-An addon API is a javascript file that exports functions that can be called through the api.
-For example in `server-side/api.ts` we export a function `foo` like so:
-``` typescript
-export async function foo(client: Client, request: Request) {
-    const service = new MyService(client)
-    const res = await service.getAddons()
-    return res
-};
-```
-This function will run for the following API call:
-https://papi.pepperi.com/v1.0/addons/api/a8f4698f-eb75-4a75-bdf6-1524eb9f6baf/api/foo
-
-You can acess the API call method, query and body in `request.method` `request.query` and `request.body` respectfully.
-
-You can add as many files as you like in both typescript & javascript. These can `require` other files & packags. The build script will create a output file for every endpoint specified in: `addon.config.json` *Endpoints* field.
-
-To debug these api's locally, just press F5, and call:
-http://localhost:4400/api/foo
-
-
-## Addon Editor
----
-The editor is the addon's UI and is developed as an Angular app.
-
-## Contributions
----
-This project is far from being complete, and is missing in tooling, documentation, examples and more. We are also interested in creating other templates like a html-css-js front-end with a vanilla node.js backend. You are welcome to contribute at: 
-https://github.com/Pepperi-Addons/create-addon
-
-Please create your on addon in a repo under:
-https://github.com/Pepperi-Addons
-so that we can all learn from each other
