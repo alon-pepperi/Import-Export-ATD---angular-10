@@ -313,6 +313,9 @@ export async function import_type_definition(client: Client, request: Request) {
 
     await doImport(type, subtypeid, map, service, atd);
     callImportOfAddons(service, atd.Addons);
+    return {
+        "InternalID": subtypeid
+    }
   } catch (ex) {
     await HandleFailure(subTypeSent, subtypeid, service, type, backupAtd, atd);
     throw ex;

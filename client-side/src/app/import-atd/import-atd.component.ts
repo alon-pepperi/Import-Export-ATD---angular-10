@@ -394,7 +394,7 @@ export class ImportAtdComponent implements OnInit {
                             this.isCallbackImportFinish = true;
                         }
 
-                        if (Object.keys(resultObj).length === 0) {
+                        if (resultObj.InternalID) {
                             const title = this.translate.instant(
                                 "Import_Export_Success"
                             );
@@ -901,8 +901,7 @@ export class ImportAtdComponent implements OnInit {
     }
 
     private validateConflictButtonEnabled() {
-        console.log(`in validateConflictButtonEnabled, this.conflictsList: 
-        ${JSON.stringify(this.conflictsList)}`);
+
         if (
             this.conflictsList.filter(
                 (x) =>
@@ -918,9 +917,7 @@ export class ImportAtdComponent implements OnInit {
     }
 
     loadConflictlist() {
-        console.log(
-            `in loadConflictlist. this.conflictsList.length: ${this.conflictsList.length}`
-        );
+
         this.validateConflictButtonEnabled();
         this.loadConflictList(this.conflictsList);
     }
@@ -948,17 +945,9 @@ export class ImportAtdComponent implements OnInit {
                     tableData
                 );
 
-                // const buffer = [];
-
-                console.log(`Rows number: ${rows.length}`);
                 rows.map((row, i) => {
                     row.UID = conflicts[i].UUID || row.UID;
-                    // const osd = new ObjectSingleData(
-                    //     pepperiListObj.UIControl,
-                    //     row
-                    // );
-                    // osd.IsEditable = true;
-                    // buffer.push(osd);
+ 
                 });
 
                 this.customConflictList.initListData(
@@ -1111,17 +1100,10 @@ export class ImportAtdComponent implements OnInit {
                     tableData
                 );
 
-                // const buffer = [];
 
-                console.log(`Rows number: ${rows.length}`);
                 rows.map((row, i) => {
                     row.UID = webhooks[i].UUID || row.UID;
-                    // const osd = new ObjectSingleData(
-                    //     pepperiListObj.UIControl,
-                    //     row
-                    // );
-                    // osd.IsEditable = true;
-                    // buffer.push(osd);
+
                 });
 
                 this.customWebhookList.initListData(
