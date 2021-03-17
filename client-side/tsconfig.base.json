@@ -20,12 +20,7 @@
             "@ngx-translate/http-loader": [
                 "node_modules/@ngx-translate/http-loader"
             ]
-            // ,"@pepperi-addons/ngx-lib": [
-            //     "../../../../../../pepperi-angular-library/dist/ngx-lib"
-            // ],
-            // "@pepperi-addons/ngx-lib/*": [
-            //     "../../../../../../pepperi-angular-library/dist/ngx-lib/*"
-            // ]
+
         }
     },
     "angularCompilerOptions": {

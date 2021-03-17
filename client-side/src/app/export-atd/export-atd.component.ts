@@ -1,36 +1,19 @@
-import { Component, OnInit, ViewChild } from "@angular/core";
+import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
 import { ObjectType } from "./../../../../models/ObjectType.enum";
-
 import {
-    PepCustomizationService,
-    PepHttpService,
-    ObjectSingleData,
-    PepDataConvertorService,
-    PepRowData,
-    PepFieldData,
-    PepAddonService,
-    FIELD_TYPE,
-    PepUtilitiesService,
-    PepSessionService,
-    IPepOption,
-} from "@pepperi-addons/ngx-lib";
-import { PepColorType } from "@pepperi-addons/ngx-lib/color";
-
-import {
-    PepListComponent,
-    IPepListSortingChangeEvent,
-    PepListViewType,
-} from "@pepperi-addons/ngx-lib/list";
-
-import { ExportAtdService } from "./export-atd.service";
-import { disableDebugTools } from "@angular/platform-browser";
+    // PepHttpService,
+    PepAddonService, IPepOption } from "@pepperi-addons/ngx-lib";
+import { AuditLog } from "@pepperi-addons/papi-sdk";
+import { PepDialogActionButton, PepDialogData, PepDialogService } from "@pepperi-addons/ngx-lib/dialog";
 import { AppService } from "../app.service";
-
+import { ExportAtdService } from "./export-atd.service";
+import { PepSelectComponent } from "@pepperi-addons/ngx-lib/select";
 @Component({
     selector: "export-atd",
     templateUrl: "./export-atd.component.html",
-    styleUrls: ["./export-atd.component.scss"],
+    styleUrls: ["./export-atd.component.scss"]
+
 })
 export class ExportAtdComponent implements OnInit {
     data: any;
@@ -39,21 +22,27 @@ export class ExportAtdComponent implements OnInit {
     activityTypes: IPepOption[];
     selectedActivity: any;
     reportInterval = undefined;
+    pluginUUID = `e9029d7f-af32-4b0e-a513-8d9ced6f8186`;
+    @ViewChild('pepSelect') pepSelect: PepSelectComponent;
+    @Input() options;
+    atd;
+
 
     constructor(
         private translate: TranslateService,
-        private customizationService: PepCustomizationService,
-        private appService: AppService,
-        private utilitiesService: PepUtilitiesService,
-        private dataConvertorService: PepDataConvertorService,
-        private httpService: PepHttpService,
         private addonService: PepAddonService,
-        private exportatdService: ExportAtdService,
-        private sessionService: PepSessionService
+        private dialogService: PepDialogService,
+        // private http: PepHttpService,
+        private exportedService: ExportAtdService,
+        private appService: AppService,
+        private cd: ChangeDetectorRef
     ) {
         this.getActivityTypes();
     }
-    ngOnInit(): void {}
+    ngOnInit(): void {
+        this.atd = this.options?.atd;
+    }
+
 
     ngOnDestroy() {
         if (this.reportInterval) {
@@ -64,6 +53,7 @@ export class ExportAtdComponent implements OnInit {
     getActivityTypes() {
         this.activityTypes = [];
         this.appService.getTypes((types: IPepOption[]) => {
+            // this.getTypes((types: IPepOption[]) => {
             if (types) {
                 types.sort((a, b) => a.value.localeCompare(b.value));
                 this.activityTypes = [...types];
@@ -72,6 +62,12 @@ export class ExportAtdComponent implements OnInit {
     }
 
     elementClicked(event) {
+        this.pepSelect.select.overlayDir.backdropClick.subscribe( ev => {
+            this.pepSelect.select.close();
+            this.cd.detectChanges();
+        });
+          this.pepSelect.select.close();
+          this.cd.detectChanges();
         this.selectedActivity = event.value;
         if (event.value === "") {
             this.disableExportButton = true;
@@ -82,23 +78,38 @@ export class ExportAtdComponent implements OnInit {
 
     exportAtd() {
         this.isCallbackExportFinish = false;
-        debugger;
+        // debugger;
         let typeString = ``;
-        this.exportatdService
-            .getTypeOfSubType(this.selectedActivity)
-            .subscribe(async (type) => {
+        this.exportedService.getTypeOfSubType(this.selectedActivity)
+            .then(async (type) => {
                 if (type.Type === ObjectType.transactions) {
                     typeString = ObjectType.toString(ObjectType.transactions);
                 } else {
                     typeString = ObjectType.toString(ObjectType.activities);
                 }
-                const res = await this.exportatdService.callToExportATDAPI(
+                const res = await this.exportedService.callToExportATDAPI(
                     typeString,
                     this.selectedActivity
                 );
                 this.reportInterval = window.setInterval(() => {
-                    this.appService
-                        .getExecutionLog(res.ExecutionUUID)
+                    if (res?.URL){
+                        window.clearInterval(this.reportInterval);
+                        this.isCallbackExportFinish = true;
+                        this.data = res.URL;
+                        this.appService.openDialog(
+                            // this.openDialog(
+                            this.translate.instant(
+                                "Export_ATD_Dialog_Title"
+                            ),
+                            this.translate.instant(
+                                "Export_ATD_Dialog_Success_Message"
+                            ),
+                            () => this.downloadUrl()
+                        );
+                    }
+                    else {
+                        this.appService.getExecutionLog(res.ExecutionUUID)
+                        // this.getExecutionLog(res.ExecutionUUID)
                         .then((logRes) => {
                             if (
                                 logRes &&
@@ -114,6 +125,7 @@ export class ExportAtdComponent implements OnInit {
                                     this.isCallbackExportFinish = true;
                                     this.data = resultObj.URL;
                                     this.appService.openDialog(
+                                        // this.openDialog(
                                         this.translate.instant(
                                             "Export_ATD_Dialog_Title"
                                         ),
@@ -137,12 +149,15 @@ export class ExportAtdComponent implements OnInit {
                                                   "Error_Occurred"
                                               );
                                     this.appService.openDialog(
+                                        // this.openDialog(
                                         this.translate.instant("Error"),
                                         contentError
                                     );
                                 }
                             }
                         });
+                    }
+
                 }, 1500);
             });
     }
@@ -198,4 +213,5 @@ export class ExportAtdComponent implements OnInit {
 
         return url.protocol === "http:" || url.protocol === "https:";
     }
+
 }

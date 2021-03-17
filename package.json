@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "cd ./server-side && npm run build && cd .. && cd ./client-side && npm run build:single-spa:client-side && cd ..",
-    "init": "npm install && cd ./server-side && npm install && cd .. && cd ./client-side && npm install && cd ..",
+    "init": "npm install && cd ./server-side && npm install && cd .. && cd ./client-side && yarn && cd ..",
     "publish-addon": "npm run build && publish-addon",
     "pub-addon": "publish-addon"
   },
@@ -14,8 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@pepperi-addons/ngx-lib": "^0.1.58",
-    "@pepperi-addons/papi-sdk": "^1.17.3",
+    "@pepperi-addons/papi-sdk": "^1.20.2",
     "@pepperi-addons/scripts": "^1.0.26",
     "@types/node-fetch": "^2.5.7",
     "again": "0.0.1"

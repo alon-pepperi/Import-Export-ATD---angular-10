@@ -14,7 +14,26 @@
         "target": "es2015",
         "types": [],
         "typeRoots": ["node_modules/@types"],
-        "lib": ["es2018", "dom"]
+        "lib": ["es2018", "dom"],
+        "paths": {
+            "@angular/*": ["node_modules/@angular/*"],
+            "@ngx-translate/core": ["node_modules/@ngx-translate/core"],
+            "@ngx-translate/http-loader": [
+                "node_modules/@ngx-translate/http-loader"
+            ],
+            // "ngx-lib": [
+            //     "../../ngx-lib/dist/ngx-lib"
+            // ],
+            // "ngx-lib/*": [
+            //     "../../ngx-lib/dist/ngx-lib/*"
+            // ],
+            // "@pepperi-addons/ngx-lib": [
+            //     "../../ngx-lib/dist/ngx-lib"
+            // ],
+            // "@pepperi-addons/ngx-lib/*": [
+            //     "../../ngx-lib/dist/ngx-lib/*"
+            // ]
+        }
     },
     "angularCompilerOptions": {
         "fullTemplateTypeCheck": true,
@@ -23,8 +42,8 @@
         "allowSyntheticDefaultImports": true
     },
     "files": [
-        "src/main.single-spa.ts"
-        //"src/main.ts"
+        // "src/main.single-spa.ts"
+        "src/main.ts"
     ],
     "include": ["src/**/*.d.ts"]
 }

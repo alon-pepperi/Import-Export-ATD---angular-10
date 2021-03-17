@@ -1,37 +1,21 @@
-<div class="plugin-page-container">
-    <div class="header-content">
-        <div class="content pep-border-bottom">
-            <div class="left-container spacing-element-negative pull-left flip">
-                <div class="spacing-element title">
-                    {{ "Export_Type_Definition_Title" | translate }}
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="main-content">
-        <div class="content">
-            <div class="child1 child-container">
-                <pep-select
-                    key="select1"
-                    label="{{ 'Select_Activity_To_Export' | translate }}"
-                    [options]="activityTypes"
-                    (valueChange)="elementClicked($event)"
-                >
-                </pep-select>
-
-                <button
-                    mat-button
-                    pepButtonLoader
-                    [disabled]="disableExportButton"
-                    [finish]="isCallbackExportFinish"
-                    [ignoreDisabledStyle]="false"
-                    (click)="exportAtd()"
-                    [ngClass]="{ disabled: disableExportButton }"
-                    class="spacing-element pep-button md strong ellipsis pull-right flip"
-                >
-                    {{ "Export_Button" | translate }}
-                </button>
-            </div>
-        </div>
-    </div>
+<div class="child1 child-container">
+    <pep-select #pepSelect
+        key="select1"
+        label="{{ 'Select_Activity_To_Export' | translate }}"
+        [options]="activityTypes"
+        (valueChange)="elementClicked($event)"
+    >
+    </pep-select>
+    <button
+        mat-button
+        pepButtonLoader
+        [disabled]="disableExportButton"
+        [finish]="isCallbackExportFinish"
+        [ignoreDisabledStyle]="false"
+        (click)="exportAtd()"
+        [ngClass]="{ disabled: disableExportButton }"
+        class="spacing-element pep-button md strong ellipsis pull-right flip"
+    >
+        {{ "Export_Button" | translate }}
+    </button>
 </div>

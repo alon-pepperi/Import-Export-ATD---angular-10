@@ -1,8 +1,8 @@
-import { Component, OnInit, Type, ViewChild } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit, Type, ViewChild } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
 // @ts-ignore
 import { UserService } from "pepperi-user-service";
-import { ImportAtdService } from "./import-atd.service";
+import { ImportAtdService } from "./index";
 import { Reference } from "./../../../../models/reference";
 import { Conflict } from "./../../../../models/conflict";
 import { ObjectType } from "./../../../../models/ObjectType.enum";
@@ -21,7 +21,7 @@ import {
     PepCustomizationService,
     PepDataConvertorService,
     FIELD_TYPE,
-    PepHttpService,
+    // PepHttpService,
     ObjectSingleData,
     PepFieldData,
     PepRowData,
@@ -40,6 +40,7 @@ import { rejects } from "assert";
 import { resolve } from "@angular/compiler-cli/src/ngtsc/file_system";
 import { Observable } from "rxjs/internal/Observable";
 import { JsonpInterceptor } from "@angular/common/http";
+import { PepSelectComponent } from "@pepperi-addons/ngx-lib/select";
 
 @Component({
     selector: "app-import-atd",
@@ -76,6 +77,7 @@ export class ImportAtdComponent implements OnInit {
 
     @ViewChild("conflictslist") customConflictList: PepListComponent;
     @ViewChild("webhookslist") customWebhookList: PepListComponent;
+    @ViewChild('pepSelect') pepSelect: PepSelectComponent;
 
     constructor(
         private dataConvertorService: PepDataConvertorService,
@@ -83,9 +85,11 @@ export class ImportAtdComponent implements OnInit {
         private appService: AppService,
         private translate: TranslateService,
         private customizationService: PepCustomizationService,
-        private httpService: PepHttpService,
+        // private httpService: PepHttpService,
         private addonService: PepAddonService,
-        private importedService: ImportAtdService
+        private importService: ImportAtdService,
+        private cd: ChangeDetectorRef
+
     ) {
         this.getActivityTypes();
         const browserCultureLang = translate.getBrowserCultureLang();
@@ -104,9 +108,9 @@ export class ImportAtdComponent implements OnInit {
     ngOnInit() {}
 
     ngOnDestroy() {
-        if (this.reportInterval) {
-            window.clearInterval(this.reportInterval);
-        }
+        // if (this.reportInterval) {
+            window.clearTimeout();
+        // }
     }
 
     async onOkConflictsClicked() {
@@ -127,7 +131,7 @@ export class ImportAtdComponent implements OnInit {
             await this.handleConflict(conflict, Resolution);
         }
         if (Resolution && Resolution != {})
-            this.importedService.callToServerAPI(
+            this.importService.callToServerAPI(
                 "upsert_to_dynamo",
                 "POST",
                 { table: `importExportATD` },
@@ -159,7 +163,7 @@ export class ImportAtdComponent implements OnInit {
                     Title: this.referenceMap.Mapping[referenceIndex].Destination
                         .Name,
                 };
-                let res = await this.importedService.callToPapi(
+                let res = await this.importService.callToPapi(
                     "POST",
                     "/file_storage",
                     file
@@ -230,7 +234,7 @@ export class ImportAtdComponent implements OnInit {
         );
         delete udt.InternalID;
         udt.Hidden = false;
-        let res = await this.importedService.callToPapi(
+        let res = await this.importService.callToPapi(
             "POST",
             "\\meta_data\\user_defined_tables",
             udt
@@ -239,7 +243,7 @@ export class ImportAtdComponent implements OnInit {
     }
 
     private async upsertTransactionItemScope(referenceIndex: number) {
-        const settings = await this.importedService.callToPapi(
+        const settings = await this.importService.callToPapi(
             "GET",
             `/meta_data/transactions/types/${this.selectedActivity}/settings`
         );
@@ -262,7 +266,7 @@ export class ImportAtdComponent implements OnInit {
         if (settings.TransactionItemsScopeFilterID) {
             filter[`internalID`] = settings.TransactionItemsScopeFilterID;
         }
-        let res = await this.importedService.callToPapi(
+        let res = await this.importService.callToPapi(
             "POST",
             "/meta_data/filters",
             filter
@@ -284,7 +288,7 @@ export class ImportAtdComponent implements OnInit {
                 RequiredOperation: "NoOperation",
             },
         };
-        let res = await this.importedService.callToPapi(
+        let res = await this.importService.callToPapi(
             "POST",
             "/file_storage",
             file
@@ -294,7 +298,7 @@ export class ImportAtdComponent implements OnInit {
     }
 
     async getTransactionItemScope(subtype: string) {
-        return await this.importedService.callToPapi(
+        return await this.importService.callToPapi(
             "GET",
             "/meta_data/lists/all_activities?where=Name='Transaction Item Scope'"
         );
@@ -303,7 +307,7 @@ export class ImportAtdComponent implements OnInit {
     async onOkWebhooksClicked() {
         this.disableCancelWebhooksButton = true;
         this.isCallbackWebhokksFinish = false;
-        debugger;
+        // debugger;
         let dynamoWebhooks = {};
         this.webhooks.forEach((webhook) => {
             let referenceIndex = this.referenceMap.Mapping.findIndex(
@@ -333,7 +337,7 @@ export class ImportAtdComponent implements OnInit {
             }
         });
 
-        await this.importedService.callToServerAPI(
+        await this.importService.callToServerAPI(
             "upsert_to_dynamo",
             "POST",
             { table: `importExportATD` },
@@ -349,82 +353,89 @@ export class ImportAtdComponent implements OnInit {
 
     private async callToImportATD() {
         await this.hanleConflictsResolution();
-
-        const presignedUrl = await this.importedService.callToPapi(
-            "POST",
-            `/file_storage/tmp`
-        );
-        await fetch(presignedUrl.UploadURL, {
-            method: `PUT`,
-            body: this.importedService.exportedAtdstring,
-        });
-
+        const presignedUrl = await this.importService.callToPapi("POST",`/file_storage/tmp`);
+        await fetch(presignedUrl.UploadURL, {method: `PUT`, body: this.importService.exportedAtdstring});
         let url = presignedUrl.DownloadURL;
-
         this.deleteContentFromMap();
-
-        const res = await this.importedService.callToServerAPI(
+        const importTypeResult = await this.importService.callToServerAPI(
             "import_type_definition",
             "POST",
             { type: this.typeString, subtype: this.selectedActivity },
             { URL: url, References: this.referenceMap },
-            true
+        true);
+        const condition = (logRes) => {
+            return logRes &&
+            logRes.Status &&
+            logRes.Status.Name !== "InProgress" &&
+            logRes.Status.Name !== "InRetry" ?
+            false: true;
+        };
+        this.poll(() => this.appService.getExecutionLog(importTypeResult.ExecutionUUID),condition,  1500)
+            .then(logRes => {
+                this.pollCallback(logRes, importTypeResult);
+        });
+
+    }
+
+    pollCallback(logRes, importTypeResult){
+        const resultObj = JSON.parse(
+            logRes.AuditInfo.ResultObject
         );
+        if (!this.isCallbackWebhokksFinish) {
+            this.isCallbackWebhokksFinish = true;
+        }
+        if (!this.isCallbackConflictsFinish) {
+            this.isCallbackConflictsFinish = true;
+        }
+        if (!this.isCallbackImportFinish) {
+            this.isCallbackImportFinish = true;
+        }
 
-        this.reportInterval = window.setInterval(() => {
-            this.appService
-                .getExecutionLog(res.ExecutionUUID)
-                .then((logRes) => {
-                    if (
-                        logRes &&
-                        logRes.Status &&
-                        logRes.Status.Name !== "InProgress" &&
-                        logRes.Status.Name !== "InRetry"
-                    ) {
-                        const resultObj = JSON.parse(
-                            logRes.AuditInfo.ResultObject
-                        );
-                        if (!this.isCallbackWebhokksFinish) {
-                            this.isCallbackWebhokksFinish = true;
-                        }
-                        if (!this.isCallbackConflictsFinish) {
-                            this.isCallbackConflictsFinish = true;
-                        }
-                        if (!this.isCallbackImportFinish) {
-                            this.isCallbackImportFinish = true;
-                        }
+        if (Object.keys(resultObj).length === 0) {
+            const title = this.translate.instant(
+                "Import_Export_Success"
+            );
+            const content = this.translate.instant(
+                "Import_Finished_Succefully"
+            );
+            this.appService.openDialog(title, content, () => {
+                window.location.reload();
+            });
+            window.clearTimeout();
 
-                        if (Object.keys(resultObj).length === 0) {
-                            const title = this.translate.instant(
-                                "Import_Export_Success"
-                            );
-                            const content = this.translate.instant(
-                                "Import_Finished_Succefully"
-                            );
-                            this.appService.openDialog(title, content, () => {
-                                window.location.reload();
-                            });
-                            window.clearInterval(this.reportInterval);
+            //window.clearInterval();
+            this.data = importTypeResult;
+        } else if (resultObj.success == "Exception") {
+            const title = this.translate.instant(
+                "Import_Export_Error"
+            );
+            window.clearTimeout();
+            this.isCallbackImportFinish = true;
+            this.appService.openDialog(
+                title,
+                resultObj.errorMessage,
+                () => {
+                    window.location.reload();
+                }
+            );
+        }
 
-                            //window.clearInterval();
-                            this.data = res;
-                        } else if (resultObj.success == "Exception") {
-                            const title = this.translate.instant(
-                                "Import_Export_Error"
-                            );
-                            window.clearInterval(this.reportInterval);
-                            this.isCallbackImportFinish = true;
-                            this.appService.openDialog(
-                                title,
-                                resultObj.errorMessage,
-                                () => {
-                                    window.location.reload();
-                                }
-                            );
-                        }
-                    }
-                });
-        }, 1500);
+    }
+
+    async poll(fn, fnCondition, ms) {
+        let result = await fn();
+        while (fnCondition(result)) {
+          await this.wait(ms);
+          result = await fn();
+        }
+        return result;
+    }
+
+    wait(ms = 1000) {
+        return new Promise(resolve => {
+          console.log(`waiting ${ms} ms...`);
+          setTimeout(resolve, ms);
+        });
     }
 
     private deleteContentFromMap() {
@@ -479,11 +490,11 @@ export class ImportAtdComponent implements OnInit {
         this.isCallbackImportFinish = false;
         this.webhooks = [];
         try {
-            await this.importedService
+            await this.importService
                 .getTypeOfSubType(this.selectedActivity)
                 .then((typeDefinition) => {
                     let exportedAtdType;
-                    if (this.importedService.exportedAtd.LineFields) {
+                    if (this.importService.exportedAtd.LineFields) {
                         exportedAtdType = ObjectType.transactions;
                     } else {
                         exportedAtdType = ObjectType.activities;
@@ -519,13 +530,13 @@ export class ImportAtdComponent implements OnInit {
                     }
                     this.getTypeString(typeDefinition);
                     this.typeUUID = typeDefinition.UUID;
-                    this.importedService
+                    this.importService
                         .callToServerAPI(
                             "build_references_mapping",
                             "POST",
                             { subtype: this.selectedActivity },
                             {
-                                References: this.importedService.exportedAtd
+                                References: this.importService.exportedAtd
                                     .References,
                             },
                             false
@@ -609,7 +620,7 @@ export class ImportAtdComponent implements OnInit {
     }
 
     private async fillWebhooksFromDynamo() {
-        let webhooksFromDynmo = await this.importedService.callToServerAPI(
+        let webhooksFromDynmo = await this.importService.callToServerAPI(
             "get_from_dynamo",
             "GET",
             { table: `importExportATD`, key: `webhooks` },
@@ -628,7 +639,7 @@ export class ImportAtdComponent implements OnInit {
     }
 
     private async fillResolutionFromDynamo() {
-        let resolutionFromDynmo = await this.importedService.callToServerAPI(
+        let resolutionFromDynmo = await this.importService.callToServerAPI(
             "get_from_dynamo",
             "GET",
             { table: `importExportATD`, key: `resolution` },
@@ -658,7 +669,7 @@ export class ImportAtdComponent implements OnInit {
         try {
             let conflicts: Conflict[] = [];
 
-            const refMaps = this.importedService.exportedAtd.References;
+            const refMaps = this.importService.exportedAtd.References;
             let unresolvedConflicts: Reference[] = [];
             for (let i = 0; i < refMaps.length; i++) {
                 await this.handleReference(
@@ -808,6 +819,7 @@ export class ImportAtdComponent implements OnInit {
     }
 
     onFileSelect(event) {
+        this.cd.detectChanges();
         let fileObj = event.value;
         if (fileObj.length > 0) {
             const file = JSON.parse(fileObj);
@@ -818,14 +830,14 @@ export class ImportAtdComponent implements OnInit {
                 if (this.selectedActivity) {
                     this.disableImportButton = false;
                 }
-                this.importedService.exportedAtdstring = decodeURIComponent(
+                this.importService.exportedAtdstring = decodeURIComponent(
                     escape(
                         window.atob(file.fileStr.split(";")[1].split(",")[1])
                     )
                 );
 
-                this.importedService.exportedAtd = JSON.parse(
-                    this.importedService.exportedAtdstring
+                this.importService.exportedAtd = JSON.parse(
+                    this.importService.exportedAtdstring
                 );
             };
         } else {
@@ -857,7 +869,7 @@ export class ImportAtdComponent implements OnInit {
     uploadFile(event) {
         let files = event.target.files;
         if (files.length > 0) {
-            this.importedService.uploadFile(files[0]);
+            this.importService.uploadFile(files[0]);
         }
     }
 
@@ -872,16 +884,22 @@ export class ImportAtdComponent implements OnInit {
     }
 
     elementClicked(event) {
+        this.pepSelect.select.overlayDir.backdropClick.subscribe( ev => {
+            this.pepSelect.select.close();
+            this.cd.detectChanges();
+        });
+          this.pepSelect.select.close();
+          this.cd.detectChanges();
         this.selectedActivity = event.value;
         if (event.value === "") {
             this.disableImportButton = true;
-        } else if (this.importedService.exportedAtdstring) {
+        } else if (this.importService.exportedAtdstring) {
             this.disableImportButton = false;
         }
     }
 
     notifyValueChanged(event) {
-        debugger;
+        // debugger;
         if (this.showConflictResolution) {
             let objectOndex = this.conflictsList.findIndex(
                 (x) => x.UUID === event.id
@@ -901,7 +919,7 @@ export class ImportAtdComponent implements OnInit {
     }
 
     private validateConflictButtonEnabled() {
-        console.log(`in validateConflictButtonEnabled, this.conflictsList: 
+        console.log(`in validateConflictButtonEnabled, this.conflictsList:
         ${JSON.stringify(this.conflictsList)}`);
         if (
             this.conflictsList.filter(
