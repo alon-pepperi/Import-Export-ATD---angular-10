@@ -8,4 +8,5 @@ export interface Reference {
   UUID?: string;
   Path?: string;
   Content?: any;
+  Configuration?: any;
 }

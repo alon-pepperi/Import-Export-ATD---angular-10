@@ -271,18 +271,15 @@ export class ImportAtdComponent implements OnInit {
     }
 
     private async upsertFileStorage(referenceIndex: number) {
-        const url = this.referenceMap.Mapping[referenceIndex].Origin.Path;
+        const referecne = this.referenceMap.Mapping[referenceIndex].Origin;
+        const url = referecne.Path;
         var ext = url.substr(url.lastIndexOf(".") + 1);
         let file: FileStorage = {
-            FileName: `${this.referenceMap.Mapping[referenceIndex].Origin.Name}.${ext}`,
-            URL: this.referenceMap.Mapping[referenceIndex].Origin.Path,
-            Title: this.referenceMap.Mapping[referenceIndex].Origin.Name,
+            FileName: `${referecne.Name}.${ext}`,
+            URL: referecne.Path,
+            Title: referecne.Name,
             Hidden: false,
-            Configuration: {
-                ObjectType: "Order",
-                Type: "CustomClientForm",
-                RequiredOperation: "NoOperation",
-            },
+            Configuration: referecne.Configuration
         };
         let res = await this.importedService.callToPapi(
             "POST",

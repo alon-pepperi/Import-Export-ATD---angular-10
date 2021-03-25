@@ -8,6 +8,7 @@ import {
 import { Reference } from "./reference";
 
 export interface ActivityTypeDefinition {
+  Version?: string;
   UUID: string;
   InternaID: string;
   ExternalID: string;

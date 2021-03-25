@@ -15,7 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "@pepperi-addons/ngx-lib": "^0.1.58",
-    "@pepperi-addons/papi-sdk": "^1.17.3",
+    "@pepperi-addons/papi-sdk": "^1.20.11",
     "@pepperi-addons/scripts": "^1.0.29",
     "@types/node-fetch": "^2.5.7",
     "again": "0.0.1"
