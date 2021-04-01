@@ -19,12 +19,13 @@
                     "options": {
                         "outputPath": "../publish/editors",
                         "index": "src/index.html",
-                        "main": "src/main.single-spa.ts",
+                        "main": "src/main.ts",
                         "polyfills": "src/polyfills.ts",
                         "tsConfig": "tsconfig.json",
                         "aot": true,
                         "stylePreprocessorOptions": {
                             "includePaths": [
+                                "../../ngx-lib/dist",
                                 "node_modules/@pepperi-addons",
                                 "node_modules"
                             ]
@@ -52,9 +53,7 @@
                         ],
                         "scripts": ["node_modules/quill/dist/quill.core.js"],
                         "customWebpackConfig": {
-                            "path": "extra-webpack.config.js",
-                            "libraryName": "client-side",
-                            "libraryTarget": "umd"
+                            "path": "webpack.config.js"
                         }
                     },
                     "configurations": {
@@ -95,7 +94,10 @@
                     },
                     "configurations": {
                         "production": {
-                            "browserTarget": "client-side:build:production"
+                            "browserTarget": "client-side:build:production",
+                            "customWebpackConfig": {
+                                "path": "webpack.prod.config.js"
+                            }
                         }
                     }
                 },

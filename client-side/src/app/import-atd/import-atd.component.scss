@@ -11,19 +11,17 @@
     padding-top: 1rem;
 }
 
-.plugin-page-container {
+// .plugin-page-container {
     .child-container {
         display: inline-table;
-        margin-right: 4rem;
         width: 28rem;
     }
-}
+// }
 @media (max-width: 460px) {
-    .plugin-page-container {
+    // .plugin-page-container {
         .child-container {
             display: inline-table;
-            margin-right: 4rem;
             width: 100%;
         }
-    }
+    // }
 }

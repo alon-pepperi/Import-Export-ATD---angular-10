@@ -1,57 +1,10 @@
-<!--
-    This code is for stand alon addon, if this addon should be under webapp remove all
-    except the <router-outlet></router-outlet>
--->
+<div class="addon-page-container">
+    <pep-top-bar [title]="(title === 'import-atd' ? 'Import_Type_Definition_Title' : 'Export_Type_Definition_Title') | translate">
+    </pep-top-bar>
+
+    <div class="main-content">
+        <div class="content">
 <router-outlet></router-outlet>
-<!-- <app-import-atd></app-import-atd> -->
-<!-- <div class="viewportDiv" #viewportDiv pepRtlDirection>
-    <header>
-        <div id="header" pepRtlClass>
-            <nav
-                class="navbar {{
-                    getTopBarStyle()
-                }} navbar-light bg-faded menuCont"
-                [ngStyle]="{
-                    'background-color': customizationService.getBrandingMainColor()
-                }"
-            >
-                <button
-                    id="btnMenuHome"
-                    (click)="navigateHome()"
-                    class="spacing-element pep-button icon-button sm weak pull-left flip"
-                    [ngClass]="getButtonClassName()"
-                    mat-button
-                >
-                    <mat-icon>
-                        <pep-icon name="system_home"></pep-icon>
-                    </mat-icon>
-                </button>
-                <button
-                    id="btnToggleSettings"
-                    class="spacing-element pep-button icon-button sm weak pull-right flip"
-                    [ngClass]="getButtonClassName()"
-                    mat-button
-                >
-                    <mat-icon>
-                        <pep-icon name="system_menu"></pep-icon>
-                    </mat-icon>
-                </button>
-            </nav>
-        </div>
-    </header>
-    <aside></aside>
-    <main>
-        <div
-            id="mainCont"
-            #mainCont
-            pepRtlDirection
-            pepRtlClass
-            [ngStyle]="{ 'padding-bottom': footerHeight + 'rem' }"
-        >
-            <router-outlet
-                [ngStyle]="{ 'padding-bottom': footerHeight + 'rem' }"
-            ></router-outlet>
-        </div>
-    </main>
 </div>
-<pep-size-detector></pep-size-detector> -->
+</div>
+</div>
