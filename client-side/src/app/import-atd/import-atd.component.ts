@@ -40,6 +40,7 @@ import { rejects } from "assert";
 import { resolve } from "@angular/compiler-cli/src/ngtsc/file_system";
 import { Observable } from "rxjs/internal/Observable";
 import { JsonpInterceptor } from "@angular/common/http";
+import { getOutputFileNames } from "typescript";
 
 @Component({
     selector: "app-import-atd",
@@ -153,8 +154,7 @@ export class ImportAtdComponent implements OnInit {
                     InternalID: Number(
                         this.referenceMap.Mapping[referenceIndex].Destination.ID
                     ),
-                    FileName: this.referenceMap.Mapping[referenceIndex]
-                        .Destination.Name,
+                    FileName: this.getFileName(this.referenceMap.Mapping[referenceIndex].Origin),
                     URL: this.referenceMap.Mapping[referenceIndex].Origin.Path,
                     Title: this.referenceMap.Mapping[referenceIndex].Destination
                         .Name,
@@ -272,10 +272,9 @@ export class ImportAtdComponent implements OnInit {
 
     private async upsertFileStorage(referenceIndex: number) {
         const referecne = this.referenceMap.Mapping[referenceIndex].Origin;
-        const url = referecne.Path;
-        var ext = url.substr(url.lastIndexOf(".") + 1);
+        const fileName = this.getFileName(referecne);
         let file: FileStorage = {
-            FileName: `${referecne.Name}.${ext}`,
+            FileName: fileName,
             URL: referecne.Path,
             Title: referecne.Name,
             Hidden: false,
@@ -289,7 +288,6 @@ export class ImportAtdComponent implements OnInit {
 
         return res;
     }
-
     async getTransactionItemScope(subtype: string) {
         return await this.importedService.callToPapi(
             "GET",
@@ -342,6 +340,11 @@ export class ImportAtdComponent implements OnInit {
         );
         await this.callToImportATD();
         //this.isCallbackWebhokksFinish = true;
+    }
+
+    private getFileName(reference:Reference) {
+        var ext = reference.Path.substr(reference.Path.lastIndexOf(".") + 1);
+        return `${reference.Name}.${ext}`
     }
 
     private async callToImportATD() {

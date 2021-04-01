@@ -1066,7 +1066,7 @@ async function GetReferencesData(service: MyService, subtype: string, exportRefe
     promises.push(
       service.papiClient.fileStorage.find({
         where: `Title IN ('${whereClauseOfNames}')`,
-        fields: ["InternalID", "Title", "URL"],
+        fields: ["InternalID", "Title", "URL", "Configuration"],
       })
     );
     callbaks.push("file_storage");
