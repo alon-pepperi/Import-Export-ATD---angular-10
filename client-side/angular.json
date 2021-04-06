@@ -25,7 +25,6 @@
                         "aot": true,
                         "stylePreprocessorOptions": {
                             "includePaths": [
-                                "../../ngx-lib/dist",
                                 "node_modules/@pepperi-addons",
                                 "node_modules"
                             ]

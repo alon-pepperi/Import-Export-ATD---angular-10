@@ -304,7 +304,7 @@ export async function import_type_definition(client: Client, request: Request) {
   const type = params.type;
   let subtypeid = params.subtype;
   const body = request.body;
-  const map: References = body.References;
+  let map: References = body.References;
   const url: string = body.URL;
   const service = new MyService(client);
   request.method = "POST";
@@ -320,6 +320,9 @@ export async function import_type_definition(client: Client, request: Request) {
   try {
     ({ atd, subtypeid } = await convertFileToATD(url, atd, subtypeid, service, type));
 
+    if (!map) {
+      map = await build_references_mapping(client, request)
+    }
     await doImport(type, subtypeid, map, service, atd);
     callImportOfAddons(service, atd.Addons);
     return {
@@ -366,7 +369,7 @@ async function doImport(type: string, subtypeid: string, map: References | null,
 
   upsertPreparation(atd, subtypeid);
   const fixReferencesPromises: Promise<boolean>[] = [];
-  let rc = true;
+
   // update mapping  to use the important ATD
   if (map) {
     fixProfilesOfDataViews(atd.DataViews, map);

@@ -11,7 +11,7 @@ import {
     PepDialogActionButton,
 } from "@pepperi-addons/ngx-lib/dialog";
 import { HttpHeaders } from "@angular/common/http";
-import { AuditLog, PapiClient } from 'papi-sdk-web';
+import { AuditLog, PapiClient } from '@pepperi-addons/papi-sdk';
 import jwt from 'jwt-decode';
 @Injectable({
     providedIn: "root",

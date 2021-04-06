@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, Type, ViewChild } from "@angular/core";
+import { ChangeDetectorRef, Component, Input, OnInit, Type, ViewChild } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
 // @ts-ignore
 import { UserService } from "pepperi-user-service";
@@ -7,7 +7,7 @@ import { Reference } from "./../../../../models/reference";
 import { Conflict } from "./../../../../models/conflict";
 import { ObjectType } from "./../../../../models/ObjectType.enum";
 import { ConflictStatus } from "../../../../models/ConflictStatus.enum";
-
+import { conflictsHandler } from "../../../../Shared/conflicts-handler";
 import { Guid } from "./../../../../models/guid";
 import { References, Mapping } from "./../../../../models/referencesMap";
 import { __param } from "tslib";
@@ -59,6 +59,7 @@ export class ImportAtdComponent implements OnInit {
     selectedFile: File;
     showConflictResolution: boolean = false;
     showWebhooksResolution: boolean = false;
+    showActivitiesList: boolean = false;
     disableConflictButton: boolean = false;
     disableImportButton: boolean = true;
     disableCancelConflictButton: boolean = false;
@@ -75,7 +76,7 @@ export class ImportAtdComponent implements OnInit {
     isCallbackConflictsFinish = false;
     isCallbackImportFinish = false;
     reportInterval = undefined;
-
+    @Input("options") options: any;
     @ViewChild("conflictslist") customConflictList: PepListComponent;
     @ViewChild("webhookslist") customWebhookList: PepListComponent;
     @ViewChild('pepSelect') pepSelect: PepSelectComponent;
@@ -106,7 +107,13 @@ export class ImportAtdComponent implements OnInit {
         });
     }
 
-    ngOnInit() {}
+    ngOnInit() {
+        if(this.options){
+            this.showActivitiesList = true;
+        }
+        this.selectedActivity = this.options.addonData.atd.InternalID;
+
+    }
 
     ngOnDestroy() {
         // if (this.reportInterval) {
@@ -546,6 +553,7 @@ export class ImportAtdComponent implements OnInit {
     }
 
     async importAtd() {
+
         this.isCallbackImportFinish = false;
         this.webhooks = [];
         try {
@@ -730,14 +738,16 @@ export class ImportAtdComponent implements OnInit {
 
             const refMaps = this.importService.exportedAtd.References;
             let unresolvedConflicts: Reference[] = [];
-            for (let i = 0; i < refMaps.length; i++) {
-                await this.handleReference(
-                    refMaps[i],
-                    conflicts,
-                    referenceMap,
-                    unresolvedConflicts
-                );
-            }
+
+            await conflictsHandler.fillReferences(referenceMap,conflicts,unresolvedConflicts,refMaps,this.webhooks);
+            // for (let i = 0; i < refMaps.length; i++) {
+            //     await this.handleReference(
+            //         refMaps[i],
+            //         conflicts,
+            //         referenceMap,
+            //         unresolvedConflicts
+            //     );
+            // }
             if (unresolvedConflicts.length > 0) {
                 this.isCallbackImportFinish = true;
                 let content = `${this.translate.instant(

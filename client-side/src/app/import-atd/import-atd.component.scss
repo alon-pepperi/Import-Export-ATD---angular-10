@@ -2,8 +2,14 @@
     display: none;
     //visibility: hidden;
 }
+.hide-activities-list{
+    display: none;
+
+}
 .list-container {
+    min-width: 60rem;
     max-width: 60rem;
+    width: 100%;
 }
 .buttons-container {
     display: flex;

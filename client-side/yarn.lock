@@ -1338,17 +1338,17 @@
     puka "^1.0.1"
     read-package-json-fast "^2.0.1"
 
-"@pepperi-addons/ngx-lib@^0.1.158":
-  version "0.1.158"
-  resolved "https://registry.yarnpkg.com/@pepperi-addons/ngx-lib/-/ngx-lib-0.1.158.tgz#cfa482f725303f928d3e9f6e6fa31242393bdefc"
-  integrity sha512-M8TvtN2ohwrKQYEZZXb1PbnBBRZ1yNFft+mExvcLNjxikwrrCbVwPAPNCBukUHEtj+VZCyMe/xMNvJHogvBl/w==
+"@pepperi-addons/ngx-lib@^0.1.154":
+  version "0.1.202"
+  resolved "https://registry.yarnpkg.com/@pepperi-addons/ngx-lib/-/ngx-lib-0.1.202.tgz#6b960b3d60b3a200c8ab030a6da01d2dea2a9ea8"
+  integrity sha512-yUWrnJFFif86FacyUxjLAV3lbT2DgFQsvyahHK68N5Wkj29Rkl6ELxmHVv+7h6aaAUTD6RnGGI+eCrKui64IWA==
   dependencies:
     tslib "^2.0.0"
 
-"@pepperi-addons/papi-sdk@^1.17.3":
-  version "1.20.2"
-  resolved "https://registry.yarnpkg.com/@pepperi-addons/papi-sdk/-/papi-sdk-1.20.2.tgz#41688412a124303e881b19bcead98b1bad9c6b8c"
-  integrity sha512-nyEBg3dtxHHYQjvixFa3A2eybopZCf4uUJY+/ZZDLB8OSWPQcV9bQlhbRjfiSBocxL9UUSj/SrYqD6Yk8Qhnjw==
+"@pepperi-addons/papi-sdk@^1.21.6":
+  version "1.21.6"
+  resolved "https://registry.yarnpkg.com/@pepperi-addons/papi-sdk/-/papi-sdk-1.21.6.tgz#5c0f30e1945e63a2a552b5cebb28deead76d64ab"
+  integrity sha512-+lAZ1x8YHkcpus69aWvy5oXrK+oY6O59Df6MeL/qlbXfQV5goiqeLBmv48snIrmOdv66uQZiEwZuGRyEicYPAA==
   dependencies:
     node-fetch "^2.6.0"
 

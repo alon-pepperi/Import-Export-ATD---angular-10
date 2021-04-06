@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --port 3010",
+    "start": "ng serve --port 3011",
+    "single-spa": "ng serve --port 4404",
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
@@ -34,7 +35,7 @@
     "@ngx-translate/core": "^13.0.0",
     "@ngx-translate/http-loader": "^6.0.0",
     "@pepperi-addons/ngx-lib": "^0.1.154",
-    "@pepperi-addons/papi-sdk": "^1.17.3",
+    "@pepperi-addons/papi-sdk": "^1.21.6",
     "@tweenjs/tween.js": "^17.1.1",
     "again": "0.0.1",
     "disable-scroll": "^0.5.1",

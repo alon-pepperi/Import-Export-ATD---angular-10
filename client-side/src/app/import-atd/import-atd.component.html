@@ -12,6 +12,7 @@
           </div>
           <div>
               <pep-select #pepSelect
+                  [ngClass]="{ 'hide-activities-list': showActivitiesList }"
                   [key]="'select1'"
                   label="{{
                       'Select_Activity_To_Import' | translate
@@ -34,7 +35,7 @@
                   [ignoreDisabledStyle]="false"
                   [finish]="isCallbackImportFinish"
                   [ngClass]="{ disabled: disableImportButton }"
-                  class="spacing-element pep-button md strong ellipsis pull-right flip"
+                  class="pep-spacing-element pep-button sm strong ellipsis pull-right flip"
               >
                   {{ "Import_Button" | translate }}
               </button>
@@ -73,7 +74,7 @@
               mat-button
               [disabled]="disableCancelConflictButton"
               [ngClass]="{ disabled: disableCancelConflictButton }"
-              class="spacing-element pep-button md weak ellipsis"
+              class="pep-spacing-element pep-button sm weak ellipsis"
           >
               {{ "Cancel" | translate }}
           </button>
@@ -85,7 +86,7 @@
               [ngClass]="{ disabled: disableConflictButton }"
               [finish]="isCallbackConflictsFinish"
               mat-button
-              class="spacing-element pep-button md strong ellipsis"
+              class="pep-spacing-element pep-button sm strong ellipsis"
           >
               {{ "Ok" | translate }}
           </button>
