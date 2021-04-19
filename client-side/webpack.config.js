@@ -9,17 +9,17 @@ module.exports = (angularWebpackConfig, options) => {
         output: {
           uniqueName: "import_export_atd"
         },
-        optimization: {
-          // Only needed to bypass a temporary bug
-          runtimeChunk: false,
-          minimize: true,
-          minimizer: [
-          new TerserPlugin({
-            extractComments: false,
-            terserOptions: {keep_fnames: /^.$/}
-          })]
+        // optimization: {
+        //   // Only needed to bypass a temporary bug
+        //   runtimeChunk: false,
+        //   minimize: true,
+        //   minimizer: [
+        //   new TerserPlugin({
+        //     extractComments: false,
+        //     terserOptions: {keep_fnames: /^.$/}
+        //   })]
 
-        },
+        // },
         externals: {
         //   'react': 'React'
         },

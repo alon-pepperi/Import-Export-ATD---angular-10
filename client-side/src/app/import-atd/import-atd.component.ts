@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Input, OnInit, Type, ViewChild } from "@angular/core";
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, Type, ViewChild } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
 // @ts-ignore
 import { UserService } from "pepperi-user-service";
@@ -59,7 +59,7 @@ export class ImportAtdComponent implements OnInit {
     selectedFile: File;
     showConflictResolution: boolean = false;
     showWebhooksResolution: boolean = false;
-    showActivitiesList: boolean = false;
+    openedAsSubAddon: boolean = false;
     disableConflictButton: boolean = false;
     disableImportButton: boolean = true;
     disableCancelConflictButton: boolean = false;
@@ -80,6 +80,7 @@ export class ImportAtdComponent implements OnInit {
     @ViewChild("conflictslist") customConflictList: PepListComponent;
     @ViewChild("webhookslist") customWebhookList: PepListComponent;
     @ViewChild('pepSelect') pepSelect: PepSelectComponent;
+    @Output() notifyAddButtonClicked: EventEmitter<any> = new EventEmitter<any>();
 
     constructor(
         private dataConvertorService: PepDataConvertorService,
@@ -109,10 +110,10 @@ export class ImportAtdComponent implements OnInit {
 
     ngOnInit() {
         if(this.options){
-            this.showActivitiesList = true;
+            this.openedAsSubAddon = true;
+            this.selectedActivity = this.options.addonData.atd.InternalID;
         }
-        this.selectedActivity = this.options.addonData.atd.InternalID;
-
+        
     }
 
     ngOnDestroy() {
@@ -422,7 +423,13 @@ export class ImportAtdComponent implements OnInit {
                 "Import_Finished_Succefully"
             );
             this.appService.openDialog(title, content, () => {
-                window.location.reload();
+                if (this.openedAsSubAddon){
+                    this.notifyAddButtonClicked.emit( { closeDialog: true })
+
+                }
+                else{
+                    window.location.reload();
+                }
             });
             window.clearTimeout();
 

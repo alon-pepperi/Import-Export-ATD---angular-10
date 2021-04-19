@@ -70,7 +70,7 @@ async function addImportFieldToUIControl(service: MyService, Client: any) {
         Type: "BackgroundJob",
         SubType: "DownloadURL",
         AddonUUID: "e9029d7f-af32-4b0e-a513-8d9ced6f8186",
-        RelativeURL: "import_export_atd",
+        RelativeURL: "export_export_atd",
         VisibleEndpoint: "api"
       }
     }

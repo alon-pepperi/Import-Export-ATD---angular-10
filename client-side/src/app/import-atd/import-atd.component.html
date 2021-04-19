@@ -1,4 +1,4 @@
-  <div
+<div
       *ngIf="!showConflictResolution && !showWebhooksResolution"
       class="left-container body-sm spacing-element-negative pull-left flip"
       style="display: contents"
@@ -8,11 +8,11 @@
               class="pep-spacing-element"
               style="padding-bottom: 2rem; width: 100%"
           >
-              {{ "Import_Description" | translate }}
+          {{ "Import_Description" | translate }}
           </div>
           <div>
               <pep-select #pepSelect
-                  [ngClass]="{ 'hide-activities-list': showActivitiesList }"
+                  [ngClass]="{ 'hide-activities-list': openedAsSubAddon }"
                   [key]="'select1'"
                   label="{{
                       'Select_Activity_To_Import' | translate
@@ -37,7 +37,7 @@
                   [ngClass]="{ disabled: disableImportButton }"
                   class="pep-spacing-element pep-button sm strong ellipsis pull-right flip"
               >
-                  {{ "Import_Button" | translate }}
+              {{ "Import_Button" | translate }}
               </button>
           </div>
       </div>
