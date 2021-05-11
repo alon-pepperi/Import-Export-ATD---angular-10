@@ -6,10 +6,10 @@ import { Webhook } from "../models/Webhook";
 
 export class conflictsHandler {
     static async fillReferences(referenceMap: References,
-            conflicts:Conflict[],
-            unresolvedConflicts: Reference[],
-            atdReferences: Reference[],
-            webhooks:Webhook[]) {
+        conflicts: Conflict[],
+        unresolvedConflicts: Reference[],
+        atdReferences: Reference[],
+        webhooks: Webhook[]) {
         for (let i = 0; i < atdReferences.length; i++) {
             await this.handleReference(
                 atdReferences[i],
@@ -26,7 +26,7 @@ export class conflictsHandler {
         conflicts: Conflict[],
         referenceMap: References,
         unresolvedConflicts: Reference[],
-        webhooks:Webhook[]
+        webhooks: Webhook[]
     ) {
         try {
             if (ref.Type !== "webhook") {
@@ -98,7 +98,7 @@ export class conflictsHandler {
             throw err;
         }
     }
-    
+
     static async compareFileContentOfOriginAndDest(
         origin: Reference,
         destinition: Reference

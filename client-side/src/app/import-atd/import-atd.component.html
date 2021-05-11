@@ -1,139 +1,50 @@
-<div
-      *ngIf="!showConflictResolution && !showWebhooksResolution"
-      class="left-container body-sm spacing-element-negative pull-left flip"
-      style="display: contents"
-  >
-      <div class="child1 child-container">
-          <div
-              class="pep-spacing-element"
-              style="padding-bottom: 2rem; width: 100%"
-          >
-          {{ "Import_Description" | translate }}
-          </div>
-          <div>
-              <pep-select #pepSelect
-                  [ngClass]="{ 'hide-activities-list': openedAsSubAddon }"
-                  [key]="'select1'"
-                  label="{{
+<div *ngIf="!showConflictResolution && !showWebhooksResolution" class="left-container body-sm spacing-element-negative pull-left flip" style="display: contents">
+    <div class="child1 child-container">
+        <div class="pep-spacing-element" style="padding-bottom: 2rem; width: 100%">
+            {{ "Import_Description" | translate }}
+        </div>
+        <div>
+            <pep-select #pepSelect [ngClass]="{ 'hide-activities-list': openedAsSubAddon }" [key]="'select1'" label="{{
                       'Select_Activity_To_Import' | translate
-                  }}"
-                  [options]="activityTypes"
-                  (valueChange)="elementClicked($event)"
-              >
-              </pep-select>
-              <pep-attachment
-                  rowSpan="2"
-                  [key]="'attachment1'"
-                  label="{{ 'Upload_ATD_File' | translate }}"
-                  (valueChange)="onFileSelect($event)"
-              >
-              </pep-attachment>
-              <button
-                  (click)="importAtd()"
-                  pepButtonLoader
-                  [disabled]="disableImportButton"
-                  [ignoreDisabledStyle]="false"
-                  [finish]="isCallbackImportFinish"
-                  [ngClass]="{ disabled: disableImportButton }"
-                  class="pep-spacing-element pep-button sm strong ellipsis pull-right flip"
-              >
-              {{ "Import_Button" | translate }}
-              </button>
-          </div>
-      </div>
-  </div>
-  <div
-      class="list-container"
-      #conflictslistContainer
-      [ngClass]="{ 'hide-list': !showConflictResolution }"
-  >
-      <div
-          class="left-container body-sm spacing-element-negative pull-left flip"
-          style="display: contents"
-      >
-          <div class="spacing-element" style="padding-bottom: 2rem">
-              {{ "Conflicts_Resolution_Title" | translate }}
-          </div>
-      </div>
-      <pep-list
-          #conflictslist
-          [firstFieldAsLink]="false"
-          [isReport]="false"
-          [supportSorting]="false"
-          [supportResizing]="true"
-          [selectionTypeForActions]="'none'"
-          [noDataFoundMsg]="'No data'"
-          [parentScroll]="conflictslistContainer"
-          (valueChange)="notifyValueChanged($event)"
-      >
-      </pep-list>
-      <div class="buttons-container">
-          <button
-              (click)="onCancelClicked()"
-              rowSpan="2"
-              mat-button
-              [disabled]="disableCancelConflictButton"
-              [ngClass]="{ disabled: disableCancelConflictButton }"
-              class="pep-spacing-element pep-button sm weak ellipsis"
-          >
-              {{ "Cancel" | translate }}
-          </button>
-          <button
-              (click)="onOkConflictsClicked()"
-              pepButtonLoader
-              [disabled]="disableConflictButton"
-              [ignoreDisabledStyle]="false"
-              [ngClass]="{ disabled: disableConflictButton }"
-              [finish]="isCallbackConflictsFinish"
-              mat-button
-              class="pep-spacing-element pep-button sm strong ellipsis"
-          >
-              {{ "Ok" | translate }}
-          </button>
-      </div>
-  </div>
-  <div
-      class="list-container"
-      #webhookslistContainer
-      [ngClass]="{ 'hide-list': !showWebhooksResolution }"
-  >
-      <p>
-          <strong>{{ "Webhooks_Table_Title" | translate }}</strong>
-      </p>
-      <pep-list
-          #webhookslist
-          [firstFieldAsLink]="false"
-          [isReport]="false"
-          [supportSorting]="false"
-          [supportResizing]="true"
-          [selectionTypeForActions]="'none'"
-          [noDataFoundMsg]="'No data'"
-          [parentScroll]="webhookslistContainer"
-          (valueChange)="notifyValueChanged($event)"
-      >
-      </pep-list>
-      <div class="buttons-container">
-          <button
-              (click)="onCancelClicked()"
-              rowSpan="2"
-              mat-button
-              [disabled]="disableCancelWebhooksButton"
-              [ngClass]="{ disabled: disableCancelWebhooksButton }"
-              class="spacing-element pep-button md weak ellipsis"
-          >
-              {{ "Cancel" | translate }}
-          </button>
-          <button
-              (click)="onOkWebhooksClicked()"
-              pepButtonLoader
-              [disabled]="disableConflictButton"
-              [ignoreDisabledStyle]="false"
-              [ngClass]="{ disabled: disableConflictButton }"
-              [finish]="isCallbackWebhokksFinish"
-              mat-button
-              class="spacing-element pep-button md strong ellipsis"
-          >
-              {{ "Ok" | translate }}
-          </button>
-      </div>
-  </div>
+                  }}" [options]="activityTypes" (valueChange)="elementClicked($event)">
+            </pep-select>
+            <pep-attachment rowSpan="2" [key]="'attachment1'" label="{{ 'Upload_ATD_File' | translate }}" (valueChange)="onFileSelect($event)">
+            </pep-attachment>
+            <button (click)="importAtd()" pepButtonLoader [disabled]="disableImportButton" [ignoreDisabledStyle]="false" [finish]="isCallbackImportFinish" [ngClass]="{ disabled: disableImportButton }" class="pep-spacing-element pep-button sm strong ellipsis pull-right flip">
+                {{ "Import_Button" | translate }}
+            </button>
+        </div>
+    </div>
+</div>
+<div class="list-container" #conflictslistContainer [ngClass]="{ 'hide-list': !showConflictResolution }">
+    <div class="left-container body-sm spacing-element-negative pull-left flip" style="display: contents">
+        <div class="spacing-element" style="padding-bottom: 2rem">
+            {{ "Conflicts_Resolution_Title" | translate }}
+        </div>
+    </div>
+    <pep-list #conflictslist [firstFieldAsLink]="false" [isReport]="false" [supportSorting]="false" [supportResizing]="true" [selectionTypeForActions]="'none'" [noDataFoundMsg]="'No data'" [parentScroll]="conflictslistContainer" (valueChange)="notifyValueChanged($event)">
+    </pep-list>
+    <div class="buttons-container">
+        <button (click)="onCancelClicked()" rowSpan="2" mat-button [disabled]="disableCancelConflictButton" [ngClass]="{ disabled: disableCancelConflictButton }" class="pep-spacing-element pep-button sm weak ellipsis">
+            {{ "Cancel" | translate }}
+        </button>
+        <button (click)="onOkConflictsClicked()" pepButtonLoader [disabled]="disableConflictButton" [ignoreDisabledStyle]="false" [ngClass]="{ disabled: disableConflictButton }" [finish]="isCallbackConflictsFinish" mat-button class="pep-spacing-element pep-button sm strong ellipsis">
+            {{ "Ok" | translate }}
+        </button>
+    </div>
+</div>
+<div class="list-container" #webhookslistContainer [ngClass]="{ 'hide-list': !showWebhooksResolution }">
+    <p>
+        <strong>{{ "Webhooks_Table_Title" | translate }}</strong>
+    </p>
+    <pep-list #webhookslist [firstFieldAsLink]="false" [isReport]="false" [supportSorting]="false" [supportResizing]="true" [selectionTypeForActions]="'none'" [noDataFoundMsg]="'No data'" [parentScroll]="webhookslistContainer" (valueChange)="notifyValueChanged($event)">
+    </pep-list>
+    <div class="buttons-container">
+        <button (click)="onCancelClicked()" rowSpan="2" mat-button [disabled]="disableCancelWebhooksButton" [ngClass]="{ disabled: disableCancelWebhooksButton }" class="spacing-element pep-button md weak ellipsis">
+            {{ "Cancel" | translate }}
+        </button>
+        <button (click)="onOkWebhooksClicked()" pepButtonLoader [disabled]="disableConflictButton" [ignoreDisabledStyle]="false" [ngClass]="{ disabled: disableConflictButton }" [finish]="isCallbackWebhokksFinish" mat-button class="spacing-element pep-button md strong ellipsis">
+            {{ "Ok" | translate }}
+        </button>
+    </div>
+</div>
