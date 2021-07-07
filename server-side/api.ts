@@ -12,8 +12,9 @@ import { ObjectType } from "../models/objectType.enum";
 import { Guid } from "../models/Guid";
 import { WorkflowActionsWithRerefences } from "../models/workflowActionsWithRerefences.enum";
 import { ATDSettings } from "@pepperi-addons/papi-sdk";
-import  * as config from "../addon.config.json";
-import {v4 as uuid} from 'uuid';
+import * as config from "../addon.config.json";
+import { v4 as uuid } from 'uuid';
+import { exception } from "console";
 
 // #region export_atd
 
@@ -23,9 +24,9 @@ export async function export_type_definition(client: Client, request: Request) {
     const params = request.query;
     const type = params.type;
     const subtypeid = params.subtype;
-
+    client.AddonUUID = `e9029d7f-af32-4b0e-a513-8d9ced6f8186`;
     const installedAddon = await service.papiClient.addons.installedAddons.addonUUID(client.AddonUUID).get()
-    
+
     console.log(`start export ATD: ${subtypeid}`);
 
     const url = await doExport(type, subtypeid, service, installedAddon.Version);
@@ -47,35 +48,28 @@ async function doExport(type: string, subtypeid: string, service: MyService, ver
   let fields: ApiFieldObject[] = await service.papiClient.metaData
     .type(type)
     .types.subtype(subtypeid)
-    .fields.get({ include_owned: false,include_internal : true });
+    .fields.get({ include_owned: false, include_internal: true });
   fields = fields.filter((item) => item.FieldID.startsWith("TSA") || item.FieldID.startsWith("PSA"));
 
   const settings: ATDSettings = await service.papiClient.metaData.type(type).types.subtype(subtypeid).settings.get();
-  const typeAddon = await service.papiClient.get(`/meta_data/${type}/types/${subtypeid}/addons`);
-  const udtAddon = await service.papiClient.get(`/meta_data/user_defined_tables/addons`);
 
-  let lineAddons = [];
   let linesFields: ApiFieldObject[] = [];
 
   if (type === ObjectType.toString(ObjectType.transactions)) {
-    lineAddons = await service.papiClient.get(`/meta_data/transaction_lines/types/${subtypeid}/addons`);
     linesFields = await service.papiClient.metaData
       .type(`transaction_lines`)
       .types.subtype(subtypeid)
       .fields.get({ include_owned: false, include_internal: true });
     linesFields = linesFields.filter((item) => item.FieldID.startsWith("TSA") || item.FieldID.startsWith("PSA"));
   }
-  let addonsRederences = typeAddon.concat(udtAddon.concat(lineAddons)).map((a) => a && a["AddonUUID"]);
-  addonsRederences = addonsRederences.filter((value, index) => addonsRederences.indexOf(value) === index);
 
   addDataViewReferences(references, dataViews);
   await addWorkflowReferences(service, references, workflow);
   await addFieldsReferences(service, references, fields);
   await addSettingsReferences(service, references, settings);
 
-  for (const addon in addonsRederences) {
-    if (addon) await addExportOfAddonResult(addon, service, addonsRederences);
-  }
+
+  const dataForImport = await addExportOfAddonResult(service, type, subtypeid);
 
   if (type === ObjectType.toString(ObjectType.transactions) && linesFields.length > 0) {
     const cartRuleTsaIndex = linesFields.findIndex((e) => e.FieldID === "PSAAddToCartRule");
@@ -84,7 +78,7 @@ async function doExport(type: string, subtypeid: string, service: MyService, ver
     }
     await addFieldsReferences(service, references, linesFields);
   }
-  
+
   atd = {
     Version: version,
     UUID: atdMetaData.UUID!,
@@ -94,7 +88,7 @@ async function doExport(type: string, subtypeid: string, service: MyService, ver
     Hidden: atdMetaData.Hidden!,
     Description: atdMetaData.Description,
     ExternalID: atdMetaData.ExternalID,
-    Addons: addonsRederences,
+    Addons: dataForImport,
     Fields: fields,
     Workflow: workflow,
     References: references,
@@ -115,18 +109,22 @@ async function doExport(type: string, subtypeid: string, service: MyService, ver
   return { URL: presignedUrl.DownloadURL };
 }
 
-async function addExportOfAddonResult(addonUUID: string, service: MyService, addons: AddonOwner[]) {
-  try {
-    service.papiClient.addons.installedAddons
-      .addonUUID(addonUUID)
-      .export()
-      .then((res) => {
-        addons.push({ UUID: addonUUID, Data: res });
-      })
-      .catch((e) => {});
-  } catch (e) {
-    // do nothing.. not each addon must implement export
+async function addExportOfAddonResult(service: MyService, type: string, subtype: string) {
+  let addonsData: any[] = [];
+  const relations = await service.papiClient.get(`/addons/data/relations?where=RelationName='ATDExport'`);
+  for (const relation of relations) {
+    try {
+      const url = `/addons/api/${relation.AddonUUID}${relation.AddonRelativeURL}?resource=${type}&internal_id=${subtype}`
+      const dataForImport = await service.papiClient.get(url);
+      const addonData: AddonOwner = { 'UUID': relation.AddonUUID, 'Data': dataForImport.DataForImport };
+      addonsData.push(addonData);
+    }
+    catch (ex) {
+      throw new Error(`Relation function: ${relation.AddonRelativeURL} failed. Addon UUID: ${relation.AddonUUID}. error: ${ex}`);
+    }
   }
+  return addonsData;
+
 }
 
 async function addSettingsReferences(service: MyService, references: Reference[], settings: ATDSettings) {
@@ -274,7 +272,7 @@ async function addWorkflowReferences(service: MyService, references: Reference[]
       Path: workflowReference.Path,
       Content: workflowReference.Content,
     };
-    if (workflowReference.Configuration){
+    if (workflowReference.Configuration) {
       reference.Configuration = workflowReference.Configuration;
     }
     let index;
@@ -321,9 +319,9 @@ export async function import_type_definition(client: Client, request: Request) {
     ({ atd, subtypeid } = await convertFileToATD(url, atd, subtypeid, service, type));
 
     await doImport(type, subtypeid, map, service, atd);
-    callImportOfAddons(service, atd.Addons);
+    await callImportOfAddons(service, type, subtypeid, atd.Addons);
     return {
-        "InternalID": subtypeid
+      "InternalID": subtypeid
     }
   } catch (ex) {
     await HandleFailure(subTypeSent, subtypeid, service, type, backupAtd, atd);
@@ -347,16 +345,23 @@ async function deleteATD(subtypeid: any, service: MyService, type: any) {
   await service.papiClient.post(`/meta_data/${type}/types`, atdToDelete);
 }
 
-async function callImportOfAddons(service: MyService, addons: AddonOwner[]) {
-  try {
-    addons?.forEach((addon) => {
-      service.papiClient.addons.installedAddons
-        .addonUUID(addon.UUID)
-        .import(addon.Data)
-        .catch((e) => {});
-    });
-  } catch (e) {
-    // do nothing.. not each addon must implement import
+async function callImportOfAddons(service: MyService, type: string, subtype: string, addons: AddonOwner[]) {
+
+  const relations = await service.papiClient.get(`/addons/data/relations?where=RelationName='ATDImport'`);
+  for (const relation of relations) {
+    try {
+      const data = addons.find(a => a.UUID == relation.AddonUUID)?.Data;
+      const body = {
+        Resource: type,
+        InternalID: subtype,
+        DataFromExport: data
+      }
+      const url = `/addons/api/${relation.AddonUUID}${relation.AddonRelativeURL}?resource=${type}&internal_id=${subtype}`
+      await service.papiClient.post(url, body);
+    }
+    catch (ex) {
+      throw new Error(`Relation function: ${relation.AddonRelativeURL} failed.Addon UUID: ${relation.AddonUUID}. error: ${ex}`);
+    }
   }
 }
 
@@ -589,9 +594,9 @@ async function upsertFields(service: MyService, fields: ApiFieldObject[], type: 
   // });
 }
 function replaceUuidOfPSAAssigment(fields: ApiFieldObject[]) {
-  for(let field of fields){
-    if (field.FieldID.startsWith('PSAAssignment')){
-      field.FieldID=`PSAAssignment${uuid()}`
+  for (let field of fields) {
+    if (field.FieldID.startsWith('PSAAssignment')) {
+      field.FieldID = `PSAAssignment${uuid()}`
     }
   }
 }
@@ -729,7 +734,7 @@ function fixWorkflowReferences(workflow: any, map: References) {
       "AttachmentFileIDs"
 
     ];
-   
+
     getReferecesObjects(workflow.WorkflowObject.WorkflowTransitions, workflow, referencesKeys, map);
     getReferecesObjects(workflow.WorkflowObject.WorkflowPrograms, workflow, referencesKeys, map);
     console.log(`fix workflow references succeeded`);
@@ -788,7 +793,7 @@ function getReferecesObjects(transitions: any, workflow: any, referencesKeys: st
 }
 
 function findFilesIDsAndReplace(map: References, action: any, fieldName: string) {
-  
+
   const filedIDs = action.KeyValue[fieldName].split(",");
   let newFilesIDs: any[] = [];
   if (filedIDs) {
@@ -940,8 +945,8 @@ function searchMappingByName(exportReferences: Reference[], referencesMap: Refer
         case "file_storage":
           const referenceDataFileNameIndex = referencesDataList.findIndex((data) => data.Title && data.Title.toString() === ref.Name);
           // in case we found file with the same same we also check that the configuration is equal
-          if (referenceDataFileNameIndex > -1 && filesWithSameConfiguration(referencesDataList[referenceDataFileNameIndex],ref)) {
-              addReferencesPair(referencesDataList[referenceDataFileNameIndex], ref, referencesMap);           
+          if (referenceDataFileNameIndex > -1 && filesWithSameConfiguration(referencesDataList[referenceDataFileNameIndex], ref)) {
+            addReferencesPair(referencesDataList[referenceDataFileNameIndex], ref, referencesMap);
           } else {
             addOriginWithDestNull(ref, referencesMap);
           }
@@ -967,11 +972,11 @@ function searchMappingByName(exportReferences: Reference[], referencesMap: Refer
   });
 }
 
-function filesWithSameConfiguration(file:FileStorage, ref: Reference) {
-  if (file.Configuration?.ObjectType === ref.Configuration.ObjectType && 
-    file.Configuration?.Type === ref.Configuration.Type && 
-    file.Configuration?.RequiredOperation === ref.Configuration.RequiredOperation){
-      return true;
+function filesWithSameConfiguration(file: FileStorage, ref: Reference) {
+  if (file.Configuration?.ObjectType === ref.Configuration.ObjectType &&
+    file.Configuration?.Type === ref.Configuration.Type &&
+    file.Configuration?.RequiredOperation === ref.Configuration.RequiredOperation) {
+    return true;
   }
   return false;
 }
