@@ -7,7 +7,8 @@ const webpack = require('webpack');
 module.exports = (angularWebpackConfig, options) => {
     const mfConfig = {
         output: {
-          uniqueName: "import_export_atd"
+          uniqueName: "import_export_atd",
+          publicPath: "http://localhost:65161/"
         },
         optimization: {
           // Only needed to bypass a temporary bug

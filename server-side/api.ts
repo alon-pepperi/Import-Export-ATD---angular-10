@@ -111,13 +111,13 @@ async function doExport(type: string, subtypeid: string, service: MyService): Pr
 
 async function addExportOfAddonResult(addonUUID: string, service: MyService, addons: AddonOwner[]) {
   try {
-    service.papiClient.addons.installedAddons
-      .addonUUID(addonUUID)
-      .export()
-      .then((res) => {
-        addons.push({ UUID: addonUUID, Data: res });
-      })
-      .catch((e) => {});
+    // service.papiClient.addons.installedAddons
+    //   .addonUUID(addonUUID)
+    //   .export()
+    //   .then((res) => {
+    //     addons.push({ UUID: addonUUID, Data: res });
+    //   })
+    //   .catch((e) => {});
   } catch (e) {
     // do nothing.. not each addon must implement export
   }
@@ -129,7 +129,7 @@ async function addSettingsReferences(service: MyService, references: Reference[]
 
   if (settings.OriginAccountsData.IDs?.length > 0) {
     settings.OriginAccountsData.IDs.forEach((element) => {
-      const accountIndex = accontsMetaData.findIndex((x) => x.InternalID == element);
+      const accountIndex = accontsMetaData.findIndex((x) => x.InternalID === element);
       const reference: Reference = {
         ID: String(accontsMetaData[accountIndex].InternalID),
         Name: accontsMetaData[accountIndex].ExternalID,
@@ -337,12 +337,12 @@ async function deleteATD(subtypeid: any, service: MyService, type: any) {
 
 async function callImportOfAddons(service: MyService, addons: AddonOwner[]) {
   try {
-    addons?.forEach((addon) => {
-      service.papiClient.addons.installedAddons
-        .addonUUID(addon.UUID)
-        .import(addon.Data)
-        .catch((e) => {});
-    });
+    // addons?.forEach((addon) => {
+    //   service.papiClient.addons.installedAddons
+    //     .addonUUID(addon.UUID)
+    //     .import(addon.Data)
+    //     .catch((e) => {});
+    // });
   } catch (e) {
     // do nothing.. not each addon must implement import
   }
