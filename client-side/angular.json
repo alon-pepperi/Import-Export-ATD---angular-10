@@ -17,89 +17,95 @@
                 "build": {
                     "builder": "@angular-builders/custom-webpack:browser",
                     "options": {
-                        "outputPath": "../publish/editors",
-                        "index": "src/index.html",
-                        "main": "src/main.ts",
-                        "polyfills": "src/polyfills.ts",
-                        "tsConfig": "tsconfig.json",
-                        "aot": true,
-                        "stylePreprocessorOptions": {
-                            "includePaths": [
-                                "../../ngx-lib/dist",
-                                "node_modules/@pepperi-addons",
-                                "node_modules"
-                            ]
-                        },
-                        "assets": [
-                            "src/favicon.ico",
-                            "src/assets",
-                            {
-                                "glob": "**/*",
-                                "input": "node_modules/@pepperi-addons/ngx-lib/src/assets",
-                                "output": "./"
-                            },
-                            {
-                                "glob": "**/*",
-                                "input": "./assets/i18n",
-                                "output": "./"
-                            }
-                        ],
-                        "styles": [
-                            "node_modules/@angular/material/prebuilt-themes/indigo-pink.css",
-                            "node_modules/quill/dist/quill.snow.css",
-                            "node_modules/quill/dist/quill.core.css",
-                            "src/theme.scss",
-                            "src/styles.scss"
-                        ],
-                        "scripts": ["node_modules/quill/dist/quill.core.js"],
-                        "customWebpackConfig": {
-                            "path": "webpack.config.js"
+                      "outputPath": "../publish",
+                      "index": "src/index.html",
+                      "main": "src/main.ts",
+                      "polyfills": "src/polyfills.ts",
+                      "tsConfig": "tsconfig.json",
+                      "sourceMap": false,
+                      "aot": true,
+                      "stylePreprocessorOptions": {
+                          "includePaths": [
+                              "node_modules/@pepperi-addons",
+                              "node_modules"
+                          ]
+                      },
+                      "assets": [
+                        "src/favicon.ico",
+                        "src/assets",
+                        {
+                          "glob": "**/*",
+                          "input": "node_modules/@pepperi-addons/ngx-lib/src/assets",
+                          "output": "./assets/ngx-lib"
                         }
+                      ],
+                      "scripts": [
+                        "node_modules/quill/dist/quill.core.js"
+                      ],
+                      "customWebpackConfig": {
+                        "path": "webpack.config.js",
+                        "libraryName": "client-side",
+                        "libraryTarget": "umd"
+                      }
                     },
                     "configurations": {
-                        "production": {
-                            "fileReplacements": [
-                                {
-                                    "replace": "src/environments/environment.ts",
-                                    "with": "src/environments/environment.prod.ts"
-                                }
-                            ],
-                            "optimization": true,
-                            "outputHashing": "none",
-                            "sourceMap": false,
-                            "extractCss": true,
-                            "namedChunks": false,
-                            "extractLicenses": true,
-                            "vendorChunk": false,
-                            "buildOptimizer": true,
-                            "budgets": [
-                                {
-                                    "type": "initial",
-                                    "maximumWarning": "2mb",
-                                    "maximumError": "5mb"
-                                },
-                                {
-                                    "type": "anyComponentStyle",
-                                    "maximumWarning": "6kb",
-                                    "maximumError": "10kb"
-                                }
-                            ]
-                        }
-                    }
-                },
-                "serve": {
+                      "production": {
+                        "fileReplacements": [
+                          {
+                            "replace": "src/environments/environment.ts",
+                            "with": "src/environments/environment.prod.ts"
+                          }
+                        ],
+                        "optimization": true,
+                        "outputHashing": "none",
+                        "namedChunks": false,
+                        "extractLicenses": true,
+                        "vendorChunk": false,
+                        "buildOptimizer": true,
+                        "budgets": [
+                          {
+                            "type": "initial",
+                            "maximumWarning": "2mb",
+                            "maximumError": "5mb"
+                          },
+                          {
+                            "type": "anyComponentStyle",
+                            "maximumWarning": "6kb",
+                            "maximumError": "10kb"
+                          }
+                        ]
+                      },
+                      "development": {
+                        "buildOptimizer": false,
+                        "optimization": false,
+                        "vendorChunk": true,
+                        "extractLicenses": false,
+                        "sourceMap": true,
+                        "namedChunks": true,
+                        "outputHashing": "none"
+                      }
+                    },
+                    "defaultConfiguration": "production"
+                  },
+                  "serve": {
                     "builder": "@angular-builders/custom-webpack:dev-server",
                     "options": {
-                        "browserTarget": "client-side:build"
+                      "browserTarget": "client-side:build",
+                      "port": 65161
                     },
                     "configurations": {
-                        "production": {
-                            "browserTarget": "client-side:build:production",
-                            "customWebpackConfig": {
-                                "path": "webpack.prod.config.js"
-                            }
-                        }
-                    }
+                      "Standalone": {
+                      },
+                      "SingleSpa": {
+                      },
+                      "production": {
+                        "browserTarget": "client-side:build:production"
+                      },
+                      "development": {
+                          "browserTarget": "client-side:build:development"
+                      }
+                     },
+                  "defaultConfiguration": "development"
                 },
                 "extract-i18n": {
                     "builder": "@angular-devkit/build-angular:extract-i18n",

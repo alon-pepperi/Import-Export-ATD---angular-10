@@ -1,8 +1,6 @@
 import { Injectable } from "@angular/core";
 import { PepDialogData } from "@pepperi-addons/ngx-lib/dialog";
 import {
-    PepAddonService,
-    PepHttpService,
     IPepOption,
     PepSessionService,
 } from "@pepperi-addons/ngx-lib";
@@ -10,9 +8,8 @@ import {
     PepDialogService,
     PepDialogActionButton,
 } from "@pepperi-addons/ngx-lib/dialog";
-import { HttpHeaders } from "@angular/common/http";
-import { AuditLog, PapiClient } from 'papi-sdk-web';
 import jwt from 'jwt-decode';
+import { AuditLog, PapiClient } from "@pepperi-addons/papi-sdk";
 @Injectable({
     providedIn: "root",
 })
@@ -31,8 +28,6 @@ export class AppService {
         })
     }
     constructor(
-        // private httpService: PepHttpService,
-        private addonService: PepAddonService,
         private sessionService: PepSessionService,
         private dialogService: PepDialogService
     ) {
@@ -125,7 +120,7 @@ export class AppService {
             title: title,
             content: content,
             actionButtons: [actionButton],
-            type: "custom",
+            actionsType: "custom",
             showClose: false,
         });
         this.dialogService.openDefaultDialog(dialogData);

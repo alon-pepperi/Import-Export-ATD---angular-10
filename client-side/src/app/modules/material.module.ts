@@ -42,9 +42,8 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTreeModule } from '@angular/material/tree';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatFormFieldModule, MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 
-import { MAT_LABEL_GLOBAL_OPTIONS } from '@angular/material/core';
 const matComponentsModules = [
     MatAutocompleteModule,
     MatBadgeModule,
@@ -108,7 +107,7 @@ const matComponentsModules = [
         BidiModule,
         matComponentsModules
     ],
-    providers: [{provide: MAT_LABEL_GLOBAL_OPTIONS, useValue: {float: 'never'}}],
+    providers: [{provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: {floatLabel: 'never'}}],
 })
 export class MaterialModule {}
 

@@ -62,10 +62,10 @@ export class ExportAtdComponent implements OnInit {
     }
 
     elementClicked(event) {
-        this.pepSelect.select.overlayDir.backdropClick.subscribe( ev => {
-            this.pepSelect.select.close();
-            this.cd.detectChanges();
-        });
+        // this.pepSelect.select['_overlayDir'].backdropClick.subscribe( ev => {
+        //     this.pepSelect.select.close();
+        //     this.cd.detectChanges();
+        // });
           this.pepSelect.select.close();
           this.cd.detectChanges();
         this.selectedActivity = event.value;

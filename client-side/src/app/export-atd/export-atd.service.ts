@@ -19,8 +19,6 @@ export class ExportAtdService {
 
 
     constructor(
-        // private httpService: PepHttpService,
-        private sessionService: PepSessionService,
         private appService: AppService
     ) {
 

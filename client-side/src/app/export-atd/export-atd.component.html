@@ -1,7 +1,7 @@
 <div class="child1 child-container">
     <pep-select #pepSelect
         key="select1"
-        label="{{ 'Select_Activity_To_Export' | translate }}"
+        label="{{ 'Select_Activity_To_Export'  }}"
         [options]="activityTypes"
         (valueChange)="elementClicked($event)"
     >
@@ -16,6 +16,6 @@
         [ngClass]="{ disabled: disableExportButton }"
         class="spacing-element pep-button md strong ellipsis pull-right flip"
     >
-        {{ "Export_Button" | translate }}
+        {{ "Export_Button" }}
     </button>
 </div>
